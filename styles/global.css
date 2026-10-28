@@ -3924,7 +3924,7 @@ html.theme-transition .marquee {
   color: var(--green-glow);
 }
 
-/* Brand lockup — MalDet Shield + Magnifying Glass */
+/* Brand lockup — MalDet Custom Logo */
 .maldet-brand {
   display: inline-flex;
   align-items: center;
@@ -3936,25 +3936,27 @@ html.theme-transition .marquee {
   color: var(--color-text);
 }
 
-.site-footer .maldet-brand,
-.approval-icon .maldet-brand {
+.site-footer .maldet-brand {
   color: var(--on-forest);
 }
 
-.maldet-brand-mark {
-  width: 2.2rem;
-  height: 2.2rem;
-  border-radius: 0.55rem;
-  background: var(--forest-900);
-  color: var(--green-glow);
-  display: grid;
-  place-items: center;
+.maldet-brand-logo {
+  width: 2.65rem;
+  height: 2.65rem;
+  border-radius: 50%;
+  object-fit: contain;
   flex: none;
-  box-shadow: 0 2px 8px rgba(5, 17, 12, 0.22), inset 0 0 0 1px rgba(163, 217, 184, 0.22);
+  box-shadow: 0 2px 10px rgba(5, 17, 12, 0.22);
+  transition: transform var(--transition-fast);
 }
 
-:root[data-theme="dark"] .maldet-brand-mark {
-  background: var(--forest-800);
+.brand-button:hover .maldet-brand-logo {
+  transform: scale(1.06) rotate(-3deg);
+}
+
+:root[data-theme="dark"] .maldet-brand-logo,
+.site-footer .maldet-brand-logo {
+  box-shadow: 0 0 0 1.5px rgba(163, 217, 184, 0.45), 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .maldet-brand-badge {
