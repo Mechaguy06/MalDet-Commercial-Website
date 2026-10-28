@@ -638,13 +638,31 @@ function useHeroSpotlight() {
 function Brand() {
   return (
     <span className="maldet-brand">
-      <img
-        className="maldet-brand-logo"
-        src="/assets/maldet-logo.png"
-        alt="MalDet logo"
-        width={424}
-        height={424}
-      />
+      <span className="maldet-brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="22" height="22">
+          <path
+            d="M16 3.5l10 3.7V15c0 6.3-4.3 11.1-10 12.9C10.3 26.1 6 21.3 6 15V7.2z"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinejoin="round"
+          />
+          <circle
+            cx="16"
+            cy="14.5"
+            r="4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+          />
+          <path
+            d="M19 17.5l3 3"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+          />
+        </svg>
+      </span>
       <span>MalDet</span>
       <span className="maldet-brand-badge">Scanner</span>
     </span>
