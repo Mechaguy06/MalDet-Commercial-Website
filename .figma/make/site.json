@@ -1,6 +1,6 @@
 {
-  "title": "SECURA — Secure Web Platform for AI Document Anonymization",
-  "description": "SECURA is a secure web platform for automated AI document anonymization, helping organizations protect sensitive information while enabling safe cross-department collaboration.",
+  "title": "MalDet — AI-Driven Malware Detection & Trust Scoring for GitHub Repositories",
+  "description": "MalDet scans public GitHub repositories with six detection engines, filters noise with a Random Forest classifier, and delivers clear Vulnerability and Malicious-Pattern verdicts.",
   "robots": {
     "index": true
   },

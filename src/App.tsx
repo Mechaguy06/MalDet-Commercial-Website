@@ -1,6 +1,8 @@
 import { type FormEvent, useEffect, useRef, useState } from "react"
 import Lenis from "lenis"
 
+const MALDET_URL = "http://103.233.1.97:5000/"
+
 type Page = "about" | "documentation" | "contact"
 type FormField = "name" | "email" | "subject" | "message"
 
@@ -10,146 +12,220 @@ type NavigationItem = {
 }
 
 const navigation: NavigationItem[] = [
-  { id: "about", label: "About" },
-  { id: "documentation", label: "Documentation" },
-  { id: "contact", label: "Contact Us" },
+  { id: "about", label: "Overview" },
+  { id: "documentation", label: "How It Works & Tools" },
+  { id: "contact", label: "About Us & Team" },
 ]
 
 const problemCards = [
   {
     number: "01",
-    title: "Unidentified Sensitive Information",
+    title: "Blind Trust in Public Repositories",
     description:
-      "Employees may share documents without properly identifying sensitive information, increasing the risk of data exposure.",
+      "Developers clone, install, and depend on public GitHub repositories every day without inspecting the source code. Attackers exploit this by hiding malware inside packages, compressed archives, and install-time hooks.",
   },
   {
     number: "02",
-    title: "Insufficient Integrated Security",
+    title: "Fragmented Tools & Alert Fatigue",
     description:
-      "Some SME workflows may lack integrated authentication, authorization, and backend validation, creating weaknesses in access control.",
+      "Running six different static and supply-chain scanners manually requires reconciling incompatible output formats and wading through tens of thousands of unprioritized, noisy alerts.",
   },
   {
     number: "03",
-    title: "Unsafe and Inefficient Document Sharing",
+    title: "Conflating Bugs with Deliberate Malware",
     description:
-      "Employees need a simple way to process, organize, and share documents within authorized departments without losing control of confidential information.",
+      "Traditional scanners lump accidental coding vulnerabilities together with deliberate backdoors and supply-chain attacks—even though a careless bug and an active trojan demand completely different responses.",
   },
 ]
 
-const objectives = [
+const solutions = [
   {
     number: "01",
-    title: "AI-Assisted Anonymization",
+    title: "Six-Engine Static & Supply-Chain Orchestration",
     description:
-      "Develop an automated system using Natural Language Processing techniques to detect and anonymize sensitive information, with accuracy evaluated through appropriate testing.",
+      "Automatically clones public repositories, unpacks nested and password-protected archives, and runs Bandit, Semgrep, pip-audit, YARA, ClamAV, GuardDog, and a custom Dependency Checker without executing untrusted code.",
   },
   {
     number: "02",
-    title: "Security Enhancement",
+    title: "ML-Powered Noise Triage (Random Forest)",
     description:
-      "Strengthen system security through authentication, authorization, backend validation, and appropriate protection for data transfers.",
+      "A trained Random Forest risk classifier evaluates every raw finding and assigns a confidence probability that the alert is genuine—weighting real threats heavily while filtering out false-positive noise.",
   },
   {
     number: "03",
-    title: "Efficient Document Collaboration",
+    title: "Dual-Axis Verdicts & Plain-English Insight",
     description:
-      "Provide a web-based interface that supports document upload, anonymization, processing, and sharing within authorized departments.",
+      "Separates security risk into two clear verdicts—Vulnerability and Malicious Pattern (scored Safe to Critical)—paired with a local LLM summary that explains the top findings in plain English without altering the deterministic score.",
   },
 ]
 
 const workflow = [
   {
     number: "01",
-    title: "Upload a Document",
-    description: "An authorized user uploads a supported document.",
+    title: "Fetch & Unpack",
+    description:
+      "Retrieves repository metadata via the GitHub API, performs a shallow clone, and extracts nested archives (including password-protected samples).",
   },
   {
     number: "02",
-    title: "Detect Sensitive Information",
+    title: "Multi-Engine Detect",
     description:
-      "NLP-based processing identifies supported sensitive information.",
+      "Six specialized open-source engines plus our custom dependency checker inspect source code, binaries, and dependency manifests in parallel.",
   },
   {
     number: "03",
-    title: "Review and Anonymize",
+    title: "Random Forest Triage",
     description:
-      "Sensitive details are anonymized according to the application workflow.",
+      "Our machine-learning classifier rates each finding's likelihood of being a real issue versus scanner noise, weighting the severity impact.",
   },
   {
     number: "04",
-    title: "Share Securely",
+    title: "Dual Verdict & Score",
     description:
-      "Protected documents are shared within permitted department boundaries.",
+      "Computes separate Vulnerability and Malicious-Pattern risk scores (Safe to Critical), generates a plain-English summary, and logs to scan history.",
+  },
+]
+
+const detectionTools = [
+  {
+    code: "PY",
+    name: "Bandit",
+    axis: "Vulnerability",
+    axisType: "vulnerability",
+    description:
+      "Finds common security mistakes in Python code, such as shell injection, unsafe deserialization, and hard-coded passwords.",
+  },
+  {
+    code: "SG",
+    name: "Semgrep",
+    axis: "Vulnerability",
+    axisType: "vulnerability",
+    description:
+      "Pattern-based static code analysis across many programming languages, powered by community security rulesets.",
+  },
+  {
+    code: "PA",
+    name: "pip-audit",
+    axis: "Vulnerability",
+    axisType: "vulnerability",
+    description:
+      "Checks pinned Python dependencies against known CVE advisories without installing or building any package code.",
+  },
+  {
+    code: "YR",
+    name: "YARA",
+    axis: "Malicious pattern",
+    axisType: "malicious",
+    description:
+      "Matches repository files against signature rules for known malware families, droppers, and obfuscated payloads.",
+  },
+  {
+    code: "AV",
+    name: "ClamAV",
+    axis: "Malicious pattern",
+    axisType: "malicious",
+    description:
+      "Open-source antivirus engine that scans every file in the repository, including files inside extracted archives.",
+  },
+  {
+    code: "GD",
+    name: "GuardDog",
+    axis: "Malicious pattern",
+    axisType: "malicious",
+    description:
+      "Detects supply-chain attack behavior such as data exfiltration, malicious setup.py install hooks, and suspicious downloads.",
+  },
+  {
+    code: "DC",
+    name: "Dependency Checker",
+    axis: "Malicious pattern",
+    axisType: "malicious",
+    description:
+      "Built specifically for MalDet. Flags typosquatted package names, direct-URL installs, and unpinned dependency versions.",
+  },
+  {
+    code: "ML",
+    name: "Risk Classifier",
+    axis: "ML Triage",
+    axisType: "triage",
+    description:
+      "Built for MalDet. A Random Forest model trained on real scan data that rates each finding's likelihood of being real.",
   },
 ]
 
 const interfaceData = [
   {
-    type: "user",
-    eyebrow: "Authorized employee workspace",
-    title: "User Interface",
+    type: "scanner" as const,
+    eyebrow: "01 · Repository ingestion interface",
+    title: "One-Click Repository Scanner",
     description:
-      "A focused workspace for processing documents and collaborating with permitted departments.",
+      "Designed for zero-configuration scanning. Paste any public GitHub URL or owner/repo shorthand, configure optional archive passwords, and launch a full sandboxed static analysis.",
     features: [
       [
-        "Document Anonymization",
-        "Identify and anonymize supported sensitive personal information.",
+        "Instant URL Validation",
+        "Client and server-side validation catches malformed GitHub URLs before queuing a scan job.",
       ],
       [
-        "Document Management",
-        "Upload, organize, archive, and restore documents according to implemented functionality.",
+        "Password-Protected Archive Support",
+        "Automatically extracts .zip, .7z, and .rar archives using configurable passwords (defaulting to 'infected').",
       ],
       [
-        "Secure Document Sharing",
-        "Share protected documents with authorized users or departments.",
+        "Safe Non-Execution Guarantee",
+        "Repositories are shallow-cloned and statically analyzed—untrusted code is never executed on the host.",
       ],
       [
-        "Original File Access",
-        "Request original documents through the controlled approval process.",
+        "Asynchronous Queue Processing",
+        "Scans run reliably on the server so users can close the tab and return anytime to view the completed report.",
       ],
     ],
   },
   {
-    type: "admin",
-    eyebrow: "Platform administration",
-    title: "Admin Interface",
+    type: "console" as const,
+    eyebrow: "02 · Dual-verdict report console",
+    title: "Interactive Triage & Verdict Console",
     description:
-      "A structured administrative view for maintaining users, roles, and organizational departments.",
+      "Replaces overwhelming raw terminal dumps with a structured ledger console showing separated risk scores, ML noise breakdown, plain-English explanations, and filterable findings.",
     features: [
-      ["User Management", "Manage registered users and assigned roles."],
       [
-        "Department Management",
-        "Create and manage organizational departments.",
+        "Separated Dual-Axis Risk Gauges",
+        "Displays distinct 5-tier badges (Safe, Low, Medium, High, Critical) and numeric scores for Vulnerability vs. Malicious Pattern.",
       ],
-      ["Account Control", "Activate, deactivate, and manage user accounts."],
       [
-        "System Overview",
-        "Review relevant platform activity and system information.",
+        "ML Confidence Breakdown Bar",
+        "Visualizes how many findings the Random Forest classifier rated as Likely Real, Uncertain, or Likely Noise.",
+      ],
+      [
+        "Plain-English Local LLM Summary",
+        "Summarizes the highest-confidence alerts in a concise paragraph while keeping risk scoring strictly deterministic.",
+      ],
+      [
+        "Filterable Findings Log & Trend Chart",
+        "Filter thousands of alerts by severity, engine, or noise toggle, and track risk score changes across rescans.",
       ],
     ],
   },
   {
-    type: "security",
-    eyebrow: "Review and monitoring",
-    title: "Security Officer Interface",
+    type: "history" as const,
+    eyebrow: "03 · Audit ledger & comparison",
+    title: "Scan History & Verdict Ledger",
     description:
-      "A security-oriented workspace for controlled approvals, integrity checks, and event review.",
+      "Every repository scan is archived in a searchable ledger book, enabling developers and security teams to audit past verdicts and compare repositories over time.",
     features: [
       [
-        "Access Request Review",
-        "Approve or reject original-file requests according to the implemented workflow.",
+        "181+ Repositories Indexed",
+        "Browse historical scans with language tags, GitHub star counts, and side-by-side dual-axis verdict seals.",
       ],
       [
-        "File Integrity Verification",
-        "Check protected originals using the implemented verification mechanism.",
+        "One-Click Rescan & Version Tracking",
+        "Trigger a fresh scan on any previously analyzed repository to verify if vulnerabilities were patched.",
       ],
       [
-        "Security Alert Monitoring",
-        "Review suspicious activity and relevant security alerts.",
+        "Exportable Full Reports",
+        "Open dedicated printable report views for academic review, compliance documentation, or team sharing.",
       ],
       [
-        "Security Log Review",
-        "Inspect application events and relevant IDS or network monitoring events.",
+        "Verdict Distribution Analytics",
+        "Tracks overall repository health across Safe, Low, Medium, High, and Critical risk tiers.",
       ],
     ],
   },
@@ -157,49 +233,55 @@ const interfaceData = [
 
 const team = [
   {
-    initials: "ML",
-    name: "Muhammad Luqman Hakim Bin Mohd Sabani",
+    initials: "SL",
+    name: "Sir Luqman",
     role: "Project Supervisor",
+    blurb: "Academic advisor guiding project methodology, cybersecurity architecture, and evaluation.",
     supervisor: true,
   },
   {
-    initials: "MI",
-    name: "Muhammad Irfan Hakeem Bin Nizwan Khairis",
-    role: "Project Manager and Backend Developer",
+    initials: "HK",
+    name: "Haikal",
+    role: "Team Lead & Core System Architect",
+    blurb: "Lead developer overseeing scanner orchestration, ML pipeline integration, and full-stack architecture.",
+    github: "https://github.com/Skidotus",
   },
   {
-    initials: "AZ",
-    name: "Muhammad Irfan Bin Mohd Zaki",
-    role: "Security and Network Engineer",
+    initials: "AR",
+    name: "Ariff",
+    role: "Project Team Member · Security & Detection Engines",
+    blurb: "Responsible for static analysis tool integration, rule tuning, and vulnerability scoring.",
   },
   {
-    initials: "AU",
-    name: "Adriana Ulfah Binti Mohd Rashdan",
-    role: "AI and NLP Engineer",
+    initials: "AL",
+    name: "Aleena",
+    role: "Project Team Member · AI Classifier & Data Triage",
+    blurb: "Focused on dataset preparation, Random Forest model training, and false-positive noise reduction.",
   },
   {
-    initials: "MA",
-    name: "Muhammad Aeman Izzuddin Bin Mohd Yusuff",
-    role: "Frontend Developer",
+    initials: "AD",
+    name: "Adam",
+    role: "Project Team Member · Web Interface & Reporting",
+    blurb: "Designed the forest-and-paper ledger interface, interactive report console, and scan history views.",
   },
 ]
 
 const marqueeItems = [
-  "AI Anonymization",
-  "Cross-Department Collaboration",
-  "NLP Detection",
-  "Controlled Sharing",
-  "Private Network",
-  "Role-Based Access",
-  "Data Privacy",
-  "Secure Workflows",
+  "AI-Driven Malware Detection",
+  "GitHub Trust Scoring",
+  "6 Detection Engines",
+  "Random Forest Triage",
+  "Vulnerability Verdict",
+  "Malicious Pattern Verdict",
+  "Supply-Chain Security",
+  "Plain-English LLM Summary",
 ]
 
 const stats = [
-  { value: 4, suffix: "", label: "Workflow Stages" },
-  { value: 3, suffix: "", label: "Role-Based Interfaces" },
-  { value: 100, suffix: "%", label: "Local Processing" },
-  { value: 5, suffix: "", label: "Project Members" },
+  { value: 181, suffix: "+", label: "Repositories Scanned" },
+  { value: 63496, suffix: "", label: "Findings Analysed" },
+  { value: 6, suffix: "", label: "Detection Engines" },
+  { value: 2, suffix: "", label: "Clear Risk Verdicts" },
 ]
 
 const useReducedMotion = () =>
@@ -209,7 +291,7 @@ const useReducedMotion = () =>
 function useTheme() {
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     if (typeof window === "undefined") return "light"
-    const stored = window.localStorage.getItem("secura-theme")
+    const stored = window.localStorage.getItem("maldet-theme")
     if (stored === "light" || stored === "dark") return stored
     return window.matchMedia("(prefers-color-scheme: dark)").matches
       ? "dark"
@@ -218,7 +300,7 @@ function useTheme() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
-    window.localStorage.setItem("secura-theme", theme)
+    window.localStorage.setItem("maldet-theme", theme)
   }, [theme])
 
   const toggleTheme = (event?: React.MouseEvent) => {
@@ -233,11 +315,9 @@ function useTheme() {
     const applyTheme = () => {
       setTheme(next)
       root.dataset.theme = next
-      window.localStorage.setItem("secura-theme", next)
+      window.localStorage.setItem("maldet-theme", next)
     }
     if (!doc.startViewTransition || useReducedMotion()) {
-      // Cross-fade fallback: tag the root for 300ms so only paint
-      // properties transition, then remove the tag.
       root.classList.add("theme-transition")
       applyTheme()
       window.setTimeout(() => root.classList.remove("theme-transition"), 350)
@@ -250,26 +330,34 @@ function useTheme() {
       Math.max(y, window.innerHeight - y),
     )
     const transition = doc.startViewTransition(applyTheme)
-    transition.ready.then(() => {
-      root.animate(
-        {
-          clipPath: [
-            `circle(0px at ${x}px ${y}px)`,
-            `circle(${radius}px at ${x}px ${y}px)`,
-          ],
-        },
-        {
-          duration: 650,
-          easing: "cubic-bezier(0.4, 0, 0.2, 1)",
-        },
-      )
-    }).catch(() => {})
+    transition.ready
+      .then(() => {
+        root.animate(
+          {
+            clipPath: [
+              `circle(0px at ${x}px ${y}px)`,
+              `circle(${radius}px at ${x}px ${y}px)`,
+            ],
+          },
+          {
+            duration: 650,
+            easing: "cubic-bezier(0.4, 0, 0.2, 1)",
+          },
+        )
+      })
+      .catch(() => {})
   }
 
   return { theme, toggleTheme }
 }
 
-function ThemeToggle({ theme, onToggle }: { theme: "light" | "dark"; onToggle: (event: React.MouseEvent) => void }) {
+function ThemeToggle({
+  theme,
+  onToggle,
+}: {
+  theme: "light" | "dark"
+  onToggle: (event: React.MouseEvent) => void
+}) {
   return (
     <button
       className="theme-toggle"
@@ -343,17 +431,19 @@ function ScrollProgress() {
 function MagneticButton({
   children,
   onClick,
+  href,
   variant = "primary",
   type = "button",
   disabled,
 }: {
   children: React.ReactNode
   onClick?: () => void
+  href?: string
   variant?: "primary" | "secondary" | "light"
   type?: "button" | "submit"
   disabled?: boolean
 }) {
-  const ref = useRef<HTMLButtonElement>(null)
+  const ref = useRef<HTMLElement>(null)
 
   const handleMove = (event: React.MouseEvent) => {
     const el = ref.current
@@ -369,9 +459,28 @@ function MagneticButton({
     if (el) el.style.transform = ""
   }
 
+  if (href) {
+    return (
+      <a
+        ref={ref as React.RefObject<HTMLAnchorElement>}
+        className={`action-button action-button-${variant}`}
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onMouseMove={handleMove}
+        onMouseLeave={handleLeave}
+      >
+        {children}
+        <span className="button-arrow" aria-hidden="true">
+          ↗
+        </span>
+      </a>
+    )
+  }
+
   return (
     <button
-      ref={ref}
+      ref={ref as React.RefObject<HTMLButtonElement>}
       className={`action-button action-button-${variant}`}
       type={type}
       onClick={onClick}
@@ -486,7 +595,7 @@ function CountUpStat({
   return (
     <div className="stat-item" ref={ref}>
       <span className="stat-value">
-        {display}
+        {display.toLocaleString()}
         {suffix}
       </span>
       <span className="stat-label">{label}</span>
@@ -528,8 +637,34 @@ function useHeroSpotlight() {
 
 function Brand() {
   return (
-    <span className="brand-lockup">
-      <img className="brand-logo" src="/assets/secura-logo.png" alt="SECURA — Cybersecurity & Data Privacy Platform" width={1018} height={374} />
+    <span className="maldet-brand">
+      <span className="maldet-brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" width="22" height="22">
+          <path
+            d="M16 3.5l10 3.7V15c0 6.3-4.3 11.1-10 12.9C10.3 26.1 6 21.3 6 15V7.2z"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinejoin="round"
+          />
+          <circle
+            cx="16"
+            cy="14.5"
+            r="4"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+          />
+          <path
+            d="M19 17.5l3 3"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+          />
+        </svg>
+      </span>
+      <span>MalDet</span>
+      <span className="maldet-brand-badge">Scanner</span>
     </span>
   )
 }
@@ -556,16 +691,34 @@ function Reveal({
 function ActionButton({
   children,
   onClick,
+  href,
   variant = "primary",
   type = "button",
   disabled,
 }: {
   children: React.ReactNode
   onClick?: () => void
+  href?: string
   variant?: "primary" | "secondary" | "light"
   type?: "button" | "submit"
   disabled?: boolean
 }) {
+  if (href) {
+    return (
+      <a
+        className={`action-button action-button-${variant}`}
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {children}
+        <span className="button-arrow" aria-hidden="true">
+          ↗
+        </span>
+      </a>
+    )
+  }
+
   return (
     <button
       className={`action-button action-button-${variant}`}
@@ -590,7 +743,7 @@ function Header({
   page: Page
   onNavigate: (page: Page) => void
   theme: "light" | "dark"
-  onToggleTheme: () => void
+  onToggleTheme: (event: React.MouseEvent) => void
 }) {
   const [open, setOpen] = useState(false)
 
@@ -617,7 +770,7 @@ function Header({
           className="brand-button"
           type="button"
           onClick={() => onNavigate("about")}
-          aria-label="SECURA home"
+          aria-label="MalDet home"
         >
           <Brand />
         </button>
@@ -643,6 +796,18 @@ function Header({
           ))}
         </div>
         <div className="header-actions">
+          <a
+            href={MALDET_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="header-cta-link"
+            aria-label="Open live MalDet web scanner in a new tab"
+          >
+            <span className="header-cta-dot" aria-hidden="true" />
+            <span>Open MalDet</span>
+            <span className="header-cta-label-full">Scanner</span>
+            <span aria-hidden="true">↗</span>
+          </a>
           <ThemeToggle theme={theme} onToggle={onToggleTheme} />
           <button
             className="menu-button"
@@ -669,15 +834,16 @@ function Footer({ onNavigate }: { onNavigate: (page: Page) => void }) {
         <div className="footer-brand">
           <Brand />
           <p>
-            A secure web platform concept for AI-assisted document anonymization
-            and controlled cross-department collaboration.
+            Development of an AI-Driven Malware Detection and Trust Scoring
+            System for GitHub Repositories. Static analysis and supply-chain
+            risk scanning before you clone, install, or depend on public code.
           </p>
           <span className="academic-label">
-            Cybersecurity Final Year Project
+            Diploma in Cyber Security Technology · German-Malaysian Institute · 2026
           </span>
         </div>
         <div className="footer-navigation">
-          <p className="footer-title">Navigate</p>
+          <p className="footer-title">Commercial Showcase</p>
           {navigation.map((item) => (
             <button
               key={item.id}
@@ -687,11 +853,39 @@ function Footer({ onNavigate }: { onNavigate: (page: Page) => void }) {
               {item.label}
             </button>
           ))}
+          <a
+            href={MALDET_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: "#a3d9b8",
+              fontWeight: 600,
+              textDecoration: "none",
+              padding: "0.25rem 0",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.35rem",
+            }}
+          >
+            Launch Live MalDet App ↗
+          </a>
+          <a
+            href={`${MALDET_URL}history`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: "rgba(241, 240, 232, 0.8)",
+              textDecoration: "none",
+              padding: "0.25rem 0",
+            }}
+          >
+            Live Scan History ↗
+          </a>
         </div>
       </div>
       <div className="content-shell footer-bottom">
-        <p>© {new Date().getFullYear()} SECURA. Academic project showcase.</p>
-        <p>Designed for presentation and review.</p>
+        <p>© {new Date().getFullYear()} MalDet. Final Year Project Commercial Showcase.</p>
+        <p>Live Scanner: {MALDET_URL}</p>
       </div>
     </footer>
   )
@@ -705,7 +899,7 @@ function SectionHeading({
   align = "center",
 }: {
   eyebrow?: string
-  title: string
+  title: React.ReactNode
   description?: string
   light?: boolean
   align?: "center" | "left"
@@ -723,46 +917,94 @@ function SectionHeading({
   )
 }
 
-function Workstation({ label }: { label: string }) {
+function LevelScale({ active }: { active: "safe" | "low" | "medium" | "high" | "critical" }) {
+  const steps: Array<"safe" | "low" | "medium" | "high" | "critical"> = [
+    "safe",
+    "low",
+    "medium",
+    "high",
+    "critical",
+  ]
   return (
-    <div className="endpoint">
-      <div className="endpoint-screen" aria-hidden="true">
-        <span />
-        <span />
-      </div>
-      <div className="endpoint-stand" aria-hidden="true" />
-      <p>{label}</p>
-    </div>
+    <span className="maldet-level-scale" role="img" aria-label={`Risk level: ${active}`}>
+      {steps.map((step) => (
+        <span
+          key={step}
+          className={`maldet-level-step maldet-level-step-${step} ${
+            step === active ? "is-on" : ""
+          }`}
+        />
+      ))}
+    </span>
   )
 }
 
-function SecureExchangeIllustration({
-  compact = false,
-}: {
-  compact?: boolean
-}) {
+function HeroVerdictPreviewCard() {
   return (
-    <div
-      className={`secure-exchange ${compact ? "secure-exchange-compact" : ""}`}
-      role="img"
-      aria-label="Protected document moving securely between Department A and Department B"
-    >
-      <Workstation label="Department A" />
-      <div className="exchange-line exchange-line-left" aria-hidden="true">
-        <span />
+    <div className="maldet-hero-card" role="region" aria-label="Live MalDet scan report preview">
+      <div className="maldet-hero-card-bar">
+        <span className="maldet-hero-card-dots" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+        </span>
+        <strong style={{ color: "var(--color-text)" }}>Latest Live Scan</strong>
+        <span style={{ marginLeft: "auto" }}>Report #201 · 25 Oct 2026</span>
       </div>
-      <div className="document-shield" aria-hidden="true">
-        <div className="shield-sheet">
-          <i />
-          <i />
-          <i />
+      <div className="maldet-hero-card-body">
+        <div className="maldet-repo-header">
+          <div>
+            <span className="maldet-repo-owner">github.com / Skidotus /</span>
+            <h3 className="maldet-repo-title">maldet</h3>
+          </div>
+          <span className="maldet-brand-badge">Python · 6 Engines</span>
         </div>
-        <span className="shield-check">✓</span>
+
+        <div className="maldet-axes-grid">
+          <div className="maldet-axis-box">
+            <div className="maldet-axis-head">
+              <span>Vulnerability</span>
+              <span className="maldet-seal maldet-seal-medium">Medium</span>
+            </div>
+            <div className="maldet-axis-score">
+              76<small>risk score</small>
+            </div>
+            <LevelScale active="medium" />
+          </div>
+
+          <div className="maldet-axis-box">
+            <div className="maldet-axis-head">
+              <span>Malicious pattern</span>
+              <span className="maldet-seal maldet-seal-medium">Medium</span>
+            </div>
+            <div className="maldet-axis-score">
+              17<small>risk score</small>
+            </div>
+            <LevelScale active="medium" />
+          </div>
+        </div>
+
+        <div className="maldet-triage-strip">
+          <div className="maldet-triage-head">
+            <span>Random Forest Classifier (67 findings)</span>
+            <span>16 Real · 12 Unsure · 39 Noise</span>
+          </div>
+          <div className="maldet-stack-bar" aria-hidden="true">
+            <span className="maldet-stack-real" style={{ width: "24%" }} />
+            <span className="maldet-stack-unsure" style={{ width: "18%" }} />
+            <span className="maldet-stack-noise" style={{ width: "58%" }} />
+          </div>
+        </div>
+
+        <div className="maldet-card-footer">
+          <span style={{ color: "var(--color-text-muted)", fontFamily: "var(--font-mono)", fontSize: "0.75rem" }}>
+            Bandit · Semgrep · YARA · ClamAV · GuardDog
+          </span>
+          <a href={`${MALDET_URL}detail/201`} target="_blank" rel="noopener noreferrer">
+            Open live report ↗
+          </a>
+        </div>
       </div>
-      <div className="exchange-line exchange-line-right" aria-hidden="true">
-        <span />
-      </div>
-      <Workstation label="Department B" />
     </div>
   )
 }
@@ -787,37 +1029,39 @@ function AboutPage({ onNavigate }: { onNavigate: (page: Page) => void }) {
           <div className="hero-copy">
             <p className="eyebrow">
               <span className="eyebrow-dot" aria-hidden="true" />
-              AI-assisted privacy protection
+              AI-Driven Malware Detection & Trust Scoring System
             </p>
             <h1>
-              Secure Web Platform for Automated AI Document Anonymization
+              Know what a repository hides <em>before you run it.</em>
             </h1>
             <p className="hero-tagline">
-              Cross-Department Collaboration, Fortified for Your Safety
+              One Scan · Six Detection Engines · Two Clear Verdicts
             </p>
             <p className="hero-description">
-              SECURA is designed to help organizations identify and anonymize
-              sensitive information before sharing documents with authorized
-              departments.
+              MalDet scans public GitHub repositories with six specialized
+              detection engines, filters real issues from scanner noise using a
+              Random Forest machine-learning classifier, and gives you two
+              actionable verdicts: is the code <strong>vulnerable</strong>, and
+              does it look <strong>malicious</strong>?
             </p>
             <div className="hero-actions">
-              <MagneticButton onClick={() => onNavigate("documentation")}>
-                Explore SECURA
+              <MagneticButton href={MALDET_URL}>
+                Launch MalDet Scanner
               </MagneticButton>
               <MagneticButton
                 variant="secondary"
-                onClick={() => onNavigate("contact")}
+                onClick={() => onNavigate("documentation")}
               >
-                Contact the Team
+                How It Works & Tools
               </MagneticButton>
             </div>
           </div>
           <div className="hero-visual">
             <div className="visual-caption">
               <span className="status-dot" />
-              Protected collaboration flow
+              Live Scanner Telemetry · {MALDET_URL}
             </div>
-            <SecureExchangeIllustration />
+            <HeroVerdictPreviewCard />
           </div>
         </div>
         <div className="hero-scroll-hint" aria-hidden="true">
@@ -845,30 +1089,35 @@ function AboutPage({ onNavigate }: { onNavigate: (page: Page) => void }) {
         <div className="content-shell overview-layout">
           <Reveal className="overview-copy">
             <SectionHeading
-              eyebrow="SECURA overview"
-              title="Safer document handling, built around controlled collaboration."
+              eyebrow="Project overview"
+              title={
+                <>
+                  A second opinion for <em>code you didn't write.</em>
+                </>
+              }
               align="left"
             />
             <p className="body-copy">
-              Sharing documents across departments can expose sensitive
-              information when personal details are not identified or properly
-              protected. SECURA is designed to support safer document handling
-              by helping users anonymize sensitive information, manage
-              documents, and share protected files within authorized
-              departments.
+              Open-source software powers modern development, but pulling an
+              unverified GitHub repository into your environment introduces
+              both accidental security vulnerabilities and intentional
+              supply-chain malware. MalDet automates multi-engine static
+              inspection and machine-learning triage so developers can verify
+              repository trustworthiness before cloning or installing.
             </p>
             <div className="trust-note">
               <span className="trust-icon" aria-hidden="true">
                 ✓
               </span>
               <p>
-                Original-file access remains separate and follows a controlled
-                review and approval process.
+                Zero-execution safety: MalDet inspects code, archives, and
+                dependencies statically without running untrusted repository
+                scripts.
               </p>
             </div>
           </Reveal>
           <Reveal className="process-visual" delay={100}>
-            {["Document", "Detect", "Anonymize", "Share"].map(
+            {["Fetch & Unpack", "6-Engine Scan", "ML Triage", "Dual Verdict"].map(
               (label, index) => (
                 <div className="mini-step" key={label}>
                   <span>{String(index + 1).padStart(2, "0")}</span>
@@ -885,9 +1134,13 @@ function AboutPage({ onNavigate }: { onNavigate: (page: Page) => void }) {
         <div className="content-shell">
           <Reveal>
             <SectionHeading
-              eyebrow="Why SECURA"
-              title="The Problem"
-              description="Everyday document workflows can create privacy and access-control risks when protection is treated as an afterthought."
+              eyebrow="Why MalDet is needed"
+              title={
+                <>
+                  The <em>Problem</em>
+                </>
+              }
+              description="Modern software supply chains face growing threats from trojanized repositories, while developers struggle with fragmented security tooling."
               light
             />
           </Reveal>
@@ -911,23 +1164,27 @@ function AboutPage({ onNavigate }: { onNavigate: (page: Page) => void }) {
         <div className="content-shell">
           <Reveal>
             <SectionHeading
-              eyebrow="Project direction"
-              title="Our Objectives"
-              description="Three focused objectives guide the proposed SECURA platform and its evaluation."
+              eyebrow="Our architecture & objectives"
+              title={
+                <>
+                  The MalDet <em>Solution</em>
+                </>
+              }
+              description="How MalDet transforms noisy multi-scanner output into clear, separated trust verdicts."
             />
           </Reveal>
           <div className="card-grid objectives-grid">
-            {objectives.map((objective, index) => (
+            {solutions.map((solution, index) => (
               <TiltCard
                 className="feature-card objective-card"
                 delay={index * 80}
-                key={objective.title}
+                key={solution.title}
               >
                 <div className="objective-icon" aria-hidden="true">
-                  {objective.number}
+                  {solution.number}
                 </div>
-                <h3>{objective.title}</h3>
-                <p>{objective.description}</p>
+                <h3>{solution.title}</h3>
+                <p>{solution.description}</p>
               </TiltCard>
             ))}
           </div>
@@ -937,19 +1194,27 @@ function AboutPage({ onNavigate }: { onNavigate: (page: Page) => void }) {
       <section className="closing-section section-pad">
         <Reveal className="content-shell closing-panel">
           <div>
-            <p className="eyebrow">Understand the system</p>
-            <h2>See how SECURA is intended to work.</h2>
+            <p className="eyebrow">Ready to test a repository?</p>
+            <h2>
+              Scan any public GitHub repository <em>live right now.</em>
+            </h2>
             <p>
-              Explore the processing workflow, private-network topology, and
-              role-based interface concepts.
+              Paste a GitHub link into the live MalDet platform or explore how
+              our six detection engines and Random Forest classifier work under
+              the hood.
             </p>
           </div>
-          <MagneticButton
-            variant="light"
-            onClick={() => onNavigate("documentation")}
-          >
-            Explore Documentation
-          </MagneticButton>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.85rem" }}>
+            <MagneticButton variant="light" href={MALDET_URL}>
+              Open MalDet Website
+            </MagneticButton>
+            <MagneticButton
+              variant="secondary"
+              onClick={() => onNavigate("documentation")}
+            >
+              Explore How It Works
+            </MagneticButton>
+          </div>
         </Reveal>
       </section>
     </main>
@@ -996,57 +1261,57 @@ const topologyNodes: TopologyNodeSpec[] = [
   {
     id: "pc",
     type: "monitor",
-    label: "Mini PC / IDS",
-    role: "Monitoring & visibility",
-    ip: "192.168.10.254",
-    protocol: "SPAN port, Syslog",
-    detail: "Monitors relevant network activity",
+    label: "GitHub Repository Target",
+    role: "Public source & archive ingestion",
+    ip: "api.github.com",
+    protocol: "HTTPS · Shallow Clone",
+    detail: "Fetches metadata & extracts .zip/.7z/.rar",
     documentation:
-      "A dedicated monitoring host outside the Internal LAN boundary, fed by a SPAN (mirror) port on the managed switch. It observes traffic patterns for anomaly detection without sitting in the forwarding path — passive visibility, zero impact on latency.",
+      "MalDet connects to the public GitHub API to retrieve repository metadata (stars, primary language, owner) and performs a shallow clone into an isolated workspace. Nested archives—including password-protected malware samples—are safely unpacked before inspection.",
   },
   {
     id: "switch",
     type: "switch",
-    label: "Network Switch",
-    role: "Local connectivity core",
-    ip: "192.168.10.1",
-    protocol: "VLAN, port mirroring",
-    detail: "Gi0/8 uplink · Gi0/1–3 access ports",
+    label: "MalDet Orchestrator",
+    role: "6-Engine Static Analysis Core",
+    ip: "103.233.1.97:5000",
+    protocol: "Gunicorn · Multi-Engine Pipeline",
+    detail: "Bandit, Semgrep, pip-audit, YARA, ClamAV, GuardDog",
     documentation:
-      "The connectivity core inside the Internal LAN. Uplink Gi0/8 carries mirrored traffic to the IDS; access ports Gi0/1, Gi0/2, and Gi0/3 serve the web application and both client nodes. VLANs segment user, server, and monitoring traffic.",
+      "The central MalDet scanning controller coordinates six open-source detection engines alongside our custom Dependency Checker. It normalizes heterogeneous JSON and text outputs into a unified finding schema without executing any code from the target repository.",
   },
   {
     id: "server",
     type: "server",
-    label: "Web Application",
-    role: "Application host",
-    ip: "192.168.10.10",
-    protocol: "HTTPS :443",
-    detail: "Hosts the SECURA application",
+    label: "Random Forest Classifier",
+    role: "ML Noise Triage & Confidence Scoring",
+    ip: "ML Triage Engine",
+    protocol: "Scikit-Learn · Confidence Weighting",
+    detail: "Rates findings as Likely Real, Uncertain, or Noise",
     documentation:
-      "Hosts the SECURA web application on an isolated LAN segment behind switch port Gi0/1. It has no direct internet exposure — users reach it only through the managed switch. TLS termination happens here with local certificate trust.",
+      "Six engines on a large repository can generate thousands of raw alerts. Our trained Random Forest model evaluates each finding's features and assigns a probability confidence score—ensuring high-confidence threats drive the verdict while likely noise is down-weighted.",
   },
   {
     id: "user1",
     type: "user",
-    label: "Client Node",
-    role: "Authorized endpoint",
-    ip: "192.168.10.20",
-    protocol: "HTTPS client",
-    detail: "Authorized endpoint · Gi0/2",
+    label: "Dual-Axis Trust Scorer",
+    role: "Vulnerability & Malicious Verdicts",
+    ip: "Verdict Engine",
+    protocol: "5-Tier Scale (Safe → Critical)",
+    detail: "Separates coding bugs from deliberate malware",
     documentation:
-      "An authorized workstation inside the private network on switch port Gi0/2. Access to SECURA follows role-based permissions, and requests for original documents go through the controlled approval workflow.",
+      "Computes two independent risk scores: the Vulnerability verdict (from Bandit, Semgrep, and pip-audit) and the Malicious-Pattern verdict (from YARA, ClamAV, GuardDog, and the Dependency Checker). Each axis receives a clear seal from Safe to Critical.",
   },
   {
     id: "user2",
     type: "user",
-    label: "Client Node",
-    role: "Authorized endpoint",
-    ip: "192.168.10.30",
-    protocol: "HTTPS client",
-    detail: "Authorized endpoint · Gi0/3",
+    label: "Local LLM & Web Console",
+    role: "Plain-English Summary & Ledger",
+    ip: "Web UI & History",
+    protocol: "Deterministic Guardrails · SQLite/Ledger",
+    detail: "Explains findings & stores historical reports",
     documentation:
-      "A second authorized workstation on switch port Gi0/3. Both endpoints operate under the same role-based access model; sessions are logged for review by the security officer role.",
+      "A local language model translates technical findings into a concise plain-English paragraph for rapid review. By design, risk levels are locked before the LLM runs so it can never hallucinate or alter a verdict. Results are saved to the persistent scan history.",
   },
 ]
 
@@ -1054,29 +1319,23 @@ interface TopologyEdgeSpec {
   id: string
   from: string
   to: string
-  /** Orthogonal path in the logical-diagram coordinate space (1000x760). */
   d: string
   label: string
-  /** Seconds for one particle traversal. Lower = busier. */
   duration: number
 }
 
 const topologyEdges: TopologyEdgeSpec[] = [
-  // Wrapper-space coordinates (~1000x760): PC bottom 108, blue box top 172,
-  // switch 212-280, trunk rail y=320, grid icon tops 360. Centers:
-  // web app x=212, client1 x=500, client2 x=788.
-  { id: "pc-switch", from: "pc", to: "switch", d: "M 500 108 L 500 212", label: "Gi0/8", duration: 2.2 },
-  { id: "switch-server", from: "switch", to: "server", d: "M 500 280 L 500 320 L 212 320 L 212 360", label: "Gi0/1", duration: 2.6 },
-  { id: "switch-user1", from: "switch", to: "user1", d: "M 500 280 L 500 360", label: "Gi0/2", duration: 2.0 },
-  { id: "switch-user2", from: "switch", to: "user2", d: "M 500 280 L 500 320 L 788 320 L 788 360", label: "Gi0/3", duration: 2.8 },
+  { id: "pc-switch", from: "pc", to: "switch", d: "M 500 108 L 500 212", label: "Clone", duration: 2.2 },
+  { id: "switch-server", from: "switch", to: "server", d: "M 500 280 L 500 320 L 212 320 L 212 360", label: "Findings", duration: 2.6 },
+  { id: "switch-user1", from: "switch", to: "user1", d: "M 500 280 L 500 360", label: "Weights", duration: 2.0 },
+  { id: "switch-user2", from: "switch", to: "user2", d: "M 500 280 L 500 320 L 788 320 L 788 360", label: "Report", duration: 2.8 },
 ]
 
 const viewModeLabels: Record<TopologyViewMode, string> = {
-  physical: "Physical Topology",
-  logical: "Logical Data Flow",
+  physical: "Architecture Flow",
+  logical: "Triage Pipeline",
 }
 
-/** Port-label anchors (1000x760 space) — exactly where the labels belong. */
 const edgeLabelPositions: Record<string, { x: number; y: number }> = {
   "pc-switch": { x: 514, y: 165 },
   "switch-server": { x: 330, y: 313 },
@@ -1145,7 +1404,7 @@ function TopologyNodeButton({
         <strong>{node.label}</strong>
         <span>{node.ip} · {node.protocol}</span>
         <span className="topo-tip-role">{node.role}</span>
-        <em>Click for details</em>
+        <em>Click for architecture details</em>
       </span>
     </button>
   )
@@ -1161,8 +1420,7 @@ function Topology() {
 
   return (
     <div className="topology-wrap topo-mode-logical">
-      {/* Navigation — isolated far above the diagram */}
-      <div className="topo-mode-toggle" role="tablist" aria-label="Topology view mode">
+      <div className="topo-mode-toggle" role="tablist" aria-label="Architecture view mode">
         {(Object.keys(viewModeLabels) as TopologyViewMode[]).map((m) => (
           <button
             key={m}
@@ -1177,13 +1435,11 @@ function Topology() {
         ))}
       </div>
 
-      {/* Main wrapper — flow layout, everything positions naturally */}
       <div
         className="logical-topology"
         role="img"
-        aria-label="Logical network diagram: a mini PC connects to a network switch inside the Internal LAN, which serves a web application and two client nodes"
+        aria-label="MalDet scanning architecture: GitHub repository target feeds into the MalDet Orchestrator, which coordinates the Random Forest Classifier, Dual-Axis Trust Scorer, and Local LLM & Web Console"
       >
-        {/* SVG spanning the whole component — behind everything */}
         <svg className="logical-edges" viewBox="0 0 1000 760" preserveAspectRatio="none" aria-hidden="true">
           <defs>
             <radialGradient id="topo-particle" cx="50%" cy="50%" r="50%">
@@ -1226,7 +1482,6 @@ function Topology() {
           </g>
         </svg>
 
-        {/* Tier 1 — Mini PC, horizontal node: icon left, text right */}
         <div className="logical-node logical-node-pc">
           <TopologyNodeButton
             node={nodeSpec("pc")}
@@ -1237,11 +1492,9 @@ function Topology() {
           />
         </div>
 
-        {/* Blue box — Internal LAN */}
         <div className="logical-lan">
-          <span className="logical-lan-label">Internal LAN</span>
+          <span className="logical-lan-label">MalDet Sandbox & Scoring Engine</span>
 
-          {/* Tier 2 — switch centered near the top, horizontal node */}
           <div className="logical-node logical-node-switch">
             <TopologyNodeButton
               node={nodeSpec("switch")}
@@ -1252,7 +1505,6 @@ function Topology() {
             />
           </div>
 
-          {/* Tier 3 — 3-column grid, text centered below icons */}
           <div className="logical-grid">
             <TopologyNodeButton
               node={nodeSpec("server")}
@@ -1296,9 +1548,18 @@ function Topology() {
             <p className="eyebrow">{activeSpec.role}</p>
             <h3>{activeSpec.label}</h3>
             <dl className="topo-spec-list">
-              <div><dt>IP address</dt><dd>{activeSpec.ip}</dd></div>
-              <div><dt>Protocol</dt><dd>{activeSpec.protocol}</dd></div>
-              <div><dt>Segment</dt><dd>Private LAN 192.168.10.0/24</dd></div>
+              <div>
+                <dt>Endpoint / Component</dt>
+                <dd>{activeSpec.ip}</dd>
+              </div>
+              <div>
+                <dt>Technology</dt>
+                <dd>{activeSpec.protocol}</dd>
+              </div>
+              <div>
+                <dt>Function</dt>
+                <dd>{activeSpec.detail}</dd>
+              </div>
             </dl>
             <p className="topo-drawer-doc">{activeSpec.documentation}</p>
           </>
@@ -1317,25 +1578,158 @@ function Topology() {
 }
 
 function InterfacePreview({ data }: { data: typeof interfaceData[number] }) {
-  const screenshot = data.type === "security" ? "security-officer" : data.type
-
   return (
-    <div className="browser-frame" aria-label={`${data.title} screenshot preview`}>
+    <div className="browser-frame" aria-label={`${data.title} interactive mockup`}>
       <div className="browser-toolbar" aria-hidden="true">
         <span />
         <span />
         <span />
-        <div className="browser-url">SECURA / {data.title}</div>
+        <div className="browser-url">
+          {MALDET_URL}
+          {data.type === "scanner"
+            ? "#scan"
+            : data.type === "console"
+              ? "detail/201"
+              : "history"}
+        </div>
       </div>
-      <img
-        className="dashboard-screenshot"
-        src={`/assets/${screenshot}-dashboard.png`}
-        alt={`Actual SECURA ${data.title} dashboard. Static promotional screenshot.`}
-        width={1853}
-        height={993}
-        loading="lazy"
-        decoding="async"
-      />
+
+      {data.type === "scanner" && (
+        <div className="ui-mockup-canvas ui-mockup-dark">
+          <div>
+            <span className="maldet-brand-badge" style={{ background: "rgba(163, 217, 184, 0.15)", color: "#a3d9b8", borderColor: "rgba(163, 217, 184, 0.3)" }}>
+              Start here · Public GitHub Scanner
+            </span>
+            <h4 className="maldet-serif" style={{ fontSize: "1.45rem", margin: "0.65rem 0 0.35rem", color: "#f1f0e8" }}>
+              Scan a repository
+            </h4>
+            <p style={{ margin: 0, color: "#a8b8ad", fontSize: "0.82rem" }}>
+              Nothing from the repository is executed. Password-protected .zip, .7z, and .rar archives are unpacked automatically.
+            </p>
+          </div>
+
+          <div style={{ display: "grid", gap: "0.65rem", background: "rgba(255,255,255,0.04)", padding: "1rem", borderRadius: "0.85rem", border: "1px solid rgba(241,240,232,0.12)" }}>
+            <div style={{ fontSize: "0.7rem", fontFamily: "var(--font-mono)", textTransform: "uppercase", letterSpacing: "0.06em", color: "#f1f0e8" }}>
+              Repository URL
+            </div>
+            <div className="ui-mockup-urlbar">
+              <span style={{ color: "#a3d9b8" }}>⌘</span>
+              <span>https://github.com/Skidotus/maldet</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.74rem", color: "#a8b8ad" }}>
+              <span>Archive password: <code style={{ color: "#a3d9b8" }}>infected</code></span>
+              <span>6 Engines Ready</span>
+            </div>
+            <a
+              href={`${MALDET_URL}#scan`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ui-mockup-btn"
+              style={{ textDecoration: "none" }}
+            >
+              Run scan on live server ↗
+            </a>
+          </div>
+        </div>
+      )}
+
+      {data.type === "console" && (
+        <div className="ui-mockup-canvas">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--color-text-muted)" }}>
+                SCAN REPORT #201
+              </span>
+              <h4 className="maldet-serif" style={{ margin: 0, fontSize: "1.25rem" }}>
+                Skidotus / <strong>maldet</strong>
+              </h4>
+            </div>
+            <span className="maldet-seal maldet-seal-medium">Medium Risk</span>
+          </div>
+
+          <div className="maldet-axes-grid" style={{ marginBottom: 0 }}>
+            <div className="maldet-axis-box" style={{ padding: "0.75rem" }}>
+              <div className="maldet-axis-head">
+                <span>Vulnerability</span>
+                <span className="maldet-seal maldet-seal-medium">Medium</span>
+              </div>
+              <div className="maldet-axis-score" style={{ fontSize: "1.6rem", margin: "0.35rem 0" }}>
+                76<small>score</small>
+              </div>
+              <LevelScale active="medium" />
+            </div>
+            <div className="maldet-axis-box" style={{ padding: "0.75rem" }}>
+              <div className="maldet-axis-head">
+                <span>Malicious pattern</span>
+                <span className="maldet-seal maldet-seal-medium">Medium</span>
+              </div>
+              <div className="maldet-axis-score" style={{ fontSize: "1.6rem", margin: "0.35rem 0" }}>
+                17<small>score</small>
+              </div>
+              <LevelScale active="medium" />
+            </div>
+          </div>
+
+          <div style={{ padding: "0.75rem", borderRadius: "0.65rem", background: "var(--color-lavender-mid)", fontSize: "0.78rem" }}>
+            <strong>Plain-English LLM Summary:</strong> 16 findings likely need attention, 39 look like noise. Most notable: CVE-2026-59951 in requirements.txt (99% confidence).
+          </div>
+        </div>
+      )}
+
+      {data.type === "history" && (
+        <div className="ui-mockup-canvas">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <strong style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem" }}>
+              Recently Scanned Ledger (181 Total)
+            </strong>
+            <a
+              href={`${MALDET_URL}history`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontSize: "0.75rem", color: "var(--color-primary)", fontWeight: 600 }}
+            >
+              View all ↗
+            </a>
+          </div>
+
+          <table className="ui-mockup-table">
+            <thead>
+              <tr>
+                <th>Repository</th>
+                <th>Lang</th>
+                <th>Vulnerability</th>
+                <th>Malicious</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Skidotus/maldet</strong></td>
+                <td>Python</td>
+                <td><span className="maldet-seal maldet-seal-medium">Medium 76</span></td>
+                <td><span className="maldet-seal maldet-seal-medium">Medium 17</span></td>
+              </tr>
+              <tr>
+                <td><strong>storytold/artcraft</strong></td>
+                <td>Rust</td>
+                <td><span className="maldet-seal maldet-seal-low">Low 3</span></td>
+                <td><span className="maldet-seal maldet-seal-low">Low 6</span></td>
+              </tr>
+              <tr>
+                <td><strong>bilawalsidhu/gods-eye</strong></td>
+                <td>JS</td>
+                <td><span className="maldet-seal maldet-seal-safe">Safe 0</span></td>
+                <td><span className="maldet-seal maldet-seal-high">High 63</span></td>
+              </tr>
+              <tr>
+                <td><strong>vivekchand/clawmetry</strong></td>
+                <td>Python</td>
+                <td><span className="maldet-seal maldet-seal-critical">Critical 584</span></td>
+                <td><span className="maldet-seal maldet-seal-critical">Critical 317</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }
@@ -1396,9 +1790,13 @@ function DocumentationPage({
         <div className="content-shell">
           <Reveal>
             <SectionHeading
-              eyebrow="Platform workflow"
-              title="How Does It Work?"
-              description="SECURA helps organizations protect sensitive information by allowing users to upload documents and identify personal details for anonymization before sharing them. Authorized users can manage, access, and share protected documents, while requests for original files follow a controlled approval process."
+              eyebrow="Scanning pipeline & workflow"
+              title={
+                <>
+                  How <em>MalDet</em> Works
+                </>
+              }
+              description="From pasting a GitHub repository URL to receiving separated Vulnerability and Malicious-Pattern verdicts, MalDet automates the entire static inspection and machine-learning triage pipeline."
               light
             />
           </Reveal>
@@ -1408,11 +1806,12 @@ function DocumentationPage({
               <Brand />
             </div>
             <div>
-              <h3>Original-file access remains controlled</h3>
+              <h3>Deterministic Scoring with Plain-English AI Explanations</h3>
               <p>
-                Access to an original document is not automatically available to
-                every department. Requests follow a defined review and approval
-                process.
+                A local language model explains the main findings in a short
+                paragraph, but the risk levels are decided deterministically
+                before the LLM sees anything—ensuring AI never alters or
+                hallucinates your security score.
               </p>
             </div>
           </Reveal>
@@ -1421,21 +1820,64 @@ function DocumentationPage({
 
       <MarqueeBand />
 
+      <section className="tools-section section-pad">
+        <div className="content-shell">
+          <Reveal>
+            <SectionHeading
+              eyebrow="Under the hood · 8 specialized components"
+              title={
+                <>
+                  The Tools <em>Behind the Verdict</em>
+                </>
+              }
+              description="Six established open-source security engines—each inspecting a different risk vector—combined with two custom components built specifically for MalDet."
+            />
+          </Reveal>
+          <div className="tools-grid">
+            {detectionTools.map((tool, index) => (
+              <TiltCard
+                className="tool-engine-card"
+                delay={index * 60}
+                key={tool.name}
+              >
+                <div className="tool-engine-top">
+                  <span className="tool-engine-icon" aria-hidden="true">
+                    {tool.code}
+                  </span>
+                  <span className={`tool-axis-tag tool-axis-${tool.axisType}`}>
+                    {tool.axis}
+                  </span>
+                </div>
+                <h3>{tool.name}</h3>
+                <p>{tool.description}</p>
+              </TiltCard>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section className="topology-section section-pad">
         <div className="content-shell">
           <Reveal>
             <SectionHeading
-              eyebrow="Private network architecture"
-              title="Our Physical Topology"
-              description="The intended setup keeps document processing within a private local network while separating monitoring, application hosting, and authorized user endpoints."
+              eyebrow="Interactive system architecture"
+              title={
+                <>
+                  Multi-Engine & ML <em>Triage Architecture</em>
+                </>
+              }
+              description="Click any node below to inspect how MalDet ingests GitHub repositories, orchestrates six static engines, filters noise with Random Forest, and publishes dual verdicts."
             />
           </Reveal>
           <Reveal delay={100}>
             <Topology />
           </Reveal>
           <p className="topology-caption">
-            The IDS or IDPS device supports monitoring and visibility. It does
-            not imply automatic prevention of every security incident.
+            All repository scanning takes place statically on the MalDet server (
+            <a href={MALDET_URL} target="_blank" rel="noopener noreferrer" style={{ color: "var(--color-primary)", fontWeight: 600 }}>
+              {MALDET_URL}
+            </a>
+            ) without executing untrusted repository code.
           </p>
         </div>
       </section>
@@ -1444,9 +1886,13 @@ function DocumentationPage({
         <div className="content-shell interfaces-shell">
           <Reveal>
             <SectionHeading
-              eyebrow="Role-based experiences"
-              title="Designed around clear responsibilities"
-              description="Actual SECURA dashboard screenshots show the platform's three primary roles. These are static promotional visuals, not interactive application screens."
+              eyebrow="User interface showcase"
+              title={
+                <>
+                  Designed for <em>Clarity & Action</em>
+                </>
+              }
+              description="Explore the three core interfaces of the MalDet web application: the repository scanner, the dual-verdict report console, and the historical audit ledger."
             />
           </Reveal>
           {interfaceData.map((data, index) => (
@@ -1462,13 +1908,24 @@ function DocumentationPage({
       <section className="closing-section section-pad">
         <Reveal className="content-shell closing-panel">
           <div>
-            <p className="eyebrow">Project questions</p>
-            <h2>Want to discuss the SECURA concept?</h2>
-            <p>Meet the project team and use the demonstration inquiry form.</p>
+            <p className="eyebrow">Try the live scanner or meet the builders</p>
+            <h2>
+              Experience MalDet <em>in action.</em>
+            </h2>
+            <p>
+              Launch the live MalDet scanner to inspect a GitHub repository
+              yourself, or visit our team page to meet the creators behind the
+              project.
+            </p>
           </div>
-          <ActionButton variant="light" onClick={() => onNavigate("contact")}>
-            Contact Us
-          </ActionButton>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.85rem" }}>
+            <ActionButton variant="light" href={MALDET_URL}>
+              Open Live MalDet Scanner
+            </ActionButton>
+            <ActionButton variant="secondary" onClick={() => onNavigate("contact")}>
+              About Us & Team
+            </ActionButton>
+          </div>
         </Reveal>
       </section>
     </main>
@@ -1495,10 +1952,33 @@ function TeamCard({
       </div>
       <div className="team-card-copy">
         {member.supervisor && (
-          <span className="supervisor-badge">Supervisor</span>
+          <span className="supervisor-badge">Project Supervisor</span>
         )}
         <h3>{member.name}</h3>
-        <p>{member.role}</p>
+        <p style={{ fontWeight: 600, color: member.supervisor ? "#a3d9b8" : "var(--color-primary)" }}>
+          {member.role}
+        </p>
+        {member.blurb && <p style={{ marginTop: "0.45rem" }}>{member.blurb}</p>}
+        <span className="team-photo-placeholder">
+          Photo & full bio slot ready
+        </span>
+        {member.github && (
+          <div style={{ marginTop: "0.65rem" }}>
+            <a
+              href={member.github}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                fontSize: "0.82rem",
+                fontWeight: 650,
+                color: "var(--color-primary)",
+                textDecoration: "none",
+              }}
+            >
+              GitHub (@Skidotus) ↗
+            </a>
+          </div>
+        )}
       </div>
     </TiltCard>
   )
@@ -1582,7 +2062,7 @@ function ContactForm() {
         label="Subject"
         value={values.subject}
         error={errors.subject}
-        placeholder="What would you like to discuss?"
+        placeholder="Feedback, collaboration, or repository inquiry"
         onChange={(value) => updateField("subject", value)}
         onBlur={() => blurField("subject")}
       />
@@ -1591,7 +2071,7 @@ function ContactForm() {
         <textarea
           id="message"
           value={values.message}
-          placeholder="Write your message here"
+          placeholder="Write your message or question for the MalDet team..."
           aria-invalid={Boolean(errors.message)}
           aria-describedby={errors.message ? "message-error" : undefined}
           onChange={(event) => updateField("message", event.target.value)}
@@ -1604,15 +2084,19 @@ function ContactForm() {
         )}
       </div>
       <div className="form-footer">
-        <ActionButton type="submit">Validate Inquiry</ActionButton>
-        <p>Demonstration form only. No message is transmitted or stored.</p>
+        <ActionButton type="submit">Send Inquiry</ActionButton>
+        <p>Demonstration contact form · Or visit the live MalDet platform directly.</p>
       </div>
       {submitted && (
         <div className="form-feedback" role="status">
           <span aria-hidden="true">✓</span>
           <p>
-            Your details are valid. This is a front-end demonstration, so no
-            message has been sent.
+            Thank you! Your inquiry has been validated. You can also test our
+            scanner directly at{" "}
+            <a href={MALDET_URL} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 700, textDecoration: "underline" }}>
+              {MALDET_URL}
+            </a>
+            .
           </p>
         </div>
       )}
@@ -1669,9 +2153,13 @@ function ContactPage() {
         <div className="content-shell">
           <Reveal>
             <SectionHeading
-              eyebrow="The people behind the project"
-              title="Meet Our Members"
-              description="A multidisciplinary Final Year Project team combining software development, AI and NLP, and network security responsibilities."
+              eyebrow="About us · German-Malaysian Institute (GMI)"
+              title={
+                <>
+                  Built as a Final Year Project, <em>Made to Be Used.</em>
+                </>
+              }
+              description="MalDet is a Final Year Project for the Diploma in Cyber Security Technology at the German-Malaysian Institute (2026). It started from a simple question: how can a developer tell whether a public repository is safe to pull in without running six security tools and reading thousands of alerts?"
             />
           </Reveal>
           <div className="team-grid">
@@ -1687,17 +2175,25 @@ function ContactPage() {
       <section className="inquiries-section section-pad">
         <div className="content-shell inquiry-layout">
           <Reveal className="inquiry-copy">
-            <p className="eyebrow">Project inquiries</p>
-            <h2>Any Inquiries?</h2>
+            <p className="eyebrow">Direct access & inquiries</p>
+            <h2>
+              Test MalDet Live or <em>Get in Touch</em>
+            </h2>
             <p>
-              Interested in the SECURA concept, architecture, or project scope?
-              Use this demonstration form to prepare an inquiry for the team.
+              Want to see our AI-Driven Malware Detection and Trust Scoring
+              System in action? Open the live MalDet scanner directly or send
+              our team a message using the inquiry form.
             </p>
+            <div style={{ marginTop: "1.5rem" }}>
+              <ActionButton variant="light" href={MALDET_URL}>
+                Launch MalDet Website ({MALDET_URL})
+              </ActionButton>
+            </div>
             <div className="privacy-note">
               <span aria-hidden="true">i</span>
               <p>
-                Public contact details have intentionally not been published.
-                Approved team information can be added later.
+                Team member photos and extended project documentation slots are
+                prepared and ready to be updated with your final assets.
               </p>
             </div>
           </Reveal>
@@ -1735,7 +2231,7 @@ function BackToTop() {
 
 function getPageFromHash(): Page {
   const hash = window.location.hash.replace("#/", "")
-  return navigation.some((item) => item.id === hash) ? hash as Page : "about"
+  return navigation.some((item) => item.id === hash) ? (hash as Page) : "about"
 }
 
 function scrollToPageTop() {
@@ -1746,7 +2242,6 @@ function scrollToPageTop() {
     window.scrollTo({ top: 0, behavior: "instant" })
     return
   }
-  // Lenis instance lives on window when active; fall back to native smooth.
   const lenis = (window as any).__lenis
   if (lenis?.scrollTo) {
     lenis.scrollTo(0, { duration: 1.2 })
@@ -1762,7 +2257,6 @@ export default function App() {
   useLenis()
 
   useEffect(() => {
-    // Expose the Lenis instance for scrollToPageTop.
     const probe = () => {
       const lenis = (window as any).__lenis
       if (!lenis) setTimeout(probe, 100)
@@ -1777,10 +2271,9 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    document.title = `SECURA — ${navigation.find((item) => item.id === page)?.label}`
+    document.title = `MalDet — ${navigation.find((item) => item.id === page)?.label}`
     scrollToPageTop()
 
-    // Content is visible by default; observation only enhances its entrance.
     if (
       typeof window.IntersectionObserver !== "function" ||
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -1825,7 +2318,12 @@ export default function App() {
         <i className="aurora-blob aurora-blob-three" />
       </div>
       <ScrollProgress />
-      <Header page={page} onNavigate={navigate} theme={theme} onToggleTheme={toggleTheme} />
+      <Header
+        page={page}
+        onNavigate={navigate}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+      />
       <div className="page-transition" key={page}>
         {page === "about" && <AboutPage onNavigate={navigate} />}
         {page === "documentation" && (

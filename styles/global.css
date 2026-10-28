@@ -1,34 +1,71 @@
 :root {
-  /* — Brand colors (light) — */
-  --color-primary: #2d0878;
-  --color-primary-hover: #3a1091;
-  --color-primary-deep: #1a044a;
-  --color-purple-muted: #9f8ac7;
-  --color-lavender: #ded1f4;
-  --color-lavender-soft: #f4effc;
-  --color-lavender-mid: #e8ddf7;
-  --color-white: #ffffff;
-  --color-text: #0d0d14;
-  --color-text-muted: #5f5a68;
-  --color-border: #e4dced;
-  --color-border-strong: #c7b6df;
-  --color-success: #1f7a54;
-  --color-error: #b33a4b;
-  --color-shadow: rgba(45, 8, 120, 0.14);
-  --color-shadow-strong: rgba(45, 8, 120, 0.22);
-  --color-glow: rgba(100, 40, 220, 0.18);
-  --color-grid: rgba(45, 8, 120, 0.09);
-  /* Cyber accent — muted electric cyan, sparing use only */
-  --color-accent: #0e7490;
-  --color-accent-soft: rgba(14, 116, 144, 0.1);
-  --color-accent-glow: rgba(14, 116, 144, 0.25);
-  /* Full-bleed "brand surface" — purple gradient in light, deep navy in dark */
-  --color-surface-strong-from: var(--color-primary-hover);
-  --color-surface-strong-mid: var(--color-primary);
-  --color-surface-strong-to: var(--color-primary-deep);
+  /* — MalDet Brand Colors (Forest & Paper Theme) — */
+  --forest-950: #05110c;
+  --forest-900: #0a1d15;
+  --forest-800: #10291f;
+  --forest-700: #193a2c;
+  --forest-line: rgba(241, 240, 232, 0.12);
+  --on-forest: #f1f0e8;
+  --on-forest-muted: #a8b8ad;
+
+  --paper: #f4f2eb;
+  --surface: #fdfcf9;
+  --surface-2: #f8f6f0;
+  --line: #e3e0d6;
+  --ink: #0f1a14;
+  --muted: #5a625b;
+
+  --green: #1f5f43;
+  --green-hover: #174d36;
+  --green-glow: #a3d9b8;
+  --green-glow-hover: #b9e4c9;
+  --green-text: #1f5a40;
+  --green-tint: #e7efe8;
+  --green-tint-line: #c9dccd;
+
+  /* Risk levels (MalDet exact 5-tier scale) */
+  --safe: #6cc28a;
+  --low: #8bb8d6;
+  --medium: #e8b84a;
+  --high: #ee9055;
+  --critical: #e86a5a;
+  --safe-text: #1f7a3d;
+  --low-text: #2f6f99;
+  --medium-text: #8a5d06;
+  --high-text: #b2521c;
+  --critical-text: #b8342a;
+
+  /* — Mapped base tokens (light / paper mode) — */
+  --color-primary: #1f5f43;
+  --color-primary-hover: #174d36;
+  --color-primary-deep: #0a1d15;
+  --color-purple-muted: #5b8c73;
+  --color-lavender: #c9dccd;
+  --color-lavender-soft: #f4f2eb;
+  --color-lavender-mid: #e7efe8;
+  --color-white: #fdfcf9;
+  --color-text: #0f1a14;
+  --color-text-muted: #5a625b;
+  --color-border: #e3e0d6;
+  --color-border-strong: #c9dccd;
+  --color-success: #1f7a3d;
+  --color-error: #b8342a;
+  --color-shadow: rgba(15, 26, 20, 0.08);
+  --color-shadow-strong: rgba(5, 17, 12, 0.18);
+  --color-glow: rgba(163, 217, 184, 0.24);
+  --color-grid: rgba(31, 95, 67, 0.08);
+  /* Cyber accent — MalDet jade & forest emerald */
+  --color-accent: #1f5a40;
+  --color-accent-soft: rgba(31, 95, 67, 0.1);
+  --color-accent-glow: rgba(163, 217, 184, 0.32);
+  /* Full-bleed "brand surface" — MalDet deep bottle-green forest */
+  --color-surface-strong-from: #10291f;
+  --color-surface-strong-mid: #0a1d15;
+  --color-surface-strong-to: #05110c;
 
   /* — Typography system — */
-  --font-body: "Instrument Sans", sans-serif;
+  --font-display: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
   /* Modular type scale, ratio 1.25 — technical readability */
   --text-xs: 0.75rem;      /* 12px — labels, fine print */
@@ -486,53 +523,52 @@ textarea:focus-visible {
 }
 
 .action-button-primary {
-  /* Always dark text on a bright gradient — readable in both themes.
-     --color-white is a dark surface token in dark mode, so use a literal. */
+  /* Always readable in both themes. */
   color: #ffffff;
   background: linear-gradient(135deg, var(--color-primary-hover), var(--color-primary) 55%, var(--color-primary));
-  box-shadow: 0 4px 16px rgba(45, 8, 120, 0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+  box-shadow: 0 4px 16px rgba(15, 26, 20, 0.25), inset 0 1px 0 rgba(255,255,255,0.18);
 }
 
 :root[data-theme="dark"] .action-button-primary {
-  background: linear-gradient(135deg, #c4b0fd, #a78bfa 60%, #8b5cf6);
-  color: #1b1530;
-  box-shadow: 0 4px 18px rgba(167, 139, 250, 0.35), inset 0 1px 0 rgba(255,255,255,0.25);
+  background: linear-gradient(135deg, #b9e4c9, #a3d9b8 60%, #86cba1);
+  color: #0a1d15;
+  box-shadow: 0 4px 18px rgba(163, 217, 184, 0.28), inset 0 1px 0 rgba(255,255,255,0.35);
 }
 
 .action-button-primary:hover {
-  box-shadow: 0 8px 24px rgba(45, 8, 120, 0.42), inset 0 1px 0 rgba(255,255,255,0.18);
+  box-shadow: 0 8px 24px rgba(15, 26, 20, 0.35), inset 0 1px 0 rgba(255,255,255,0.22);
 }
 
 .action-button-secondary {
   border-color: var(--color-border-strong);
   color: var(--color-primary);
   background: var(--color-white);
-  box-shadow: 0 2px 8px rgba(45, 8, 120, 0.06);
+  box-shadow: 0 2px 8px rgba(15, 26, 20, 0.06);
 }
 
 .action-button-secondary:hover {
   border-color: var(--color-primary);
   background: var(--color-lavender-soft);
-  box-shadow: 0 4px 14px rgba(45, 8, 120, 0.1);
+  box-shadow: 0 4px 14px rgba(15, 26, 20, 0.1);
 }
 
 .action-button-light {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(255, 255, 255, 0.28);
-  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-  backdrop-filter: blur(6px);
+  color: #0a1d15;
+  background: #a3d9b8;
+  border-color: #a3d9b8;
+  box-shadow: 0 4px 14px rgba(5, 17, 12, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .action-button-light:hover {
-  background: rgba(255, 255, 255, 0.24);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.14);
+  background: #b9e4c9;
+  border-color: #b9e4c9;
+  box-shadow: 0 6px 20px rgba(5, 17, 12, 0.32);
 }
 
 :root[data-theme="dark"] .action-button-light {
-  color: #e6e1f2;
-  background: var(--color-lavender-soft);
-  border-color: var(--color-border-strong);
+  color: #0a1d15;
+  background: #a3d9b8;
+  border-color: #a3d9b8;
 }
 
 .button-arrow {
@@ -2219,9 +2255,9 @@ textarea:focus-visible {
 
 .academic-label {
   padding: var(--space-1) var(--space-3);
-  border: var(--border-thin) solid rgba(255, 255, 255, 0.28);
+  border: var(--border-thin) solid rgba(163, 217, 184, 0.35);
   border-radius: var(--radius-pill);
-  color: #d6c9f7;
+  color: #a3d9b8;
   font-size: 0.72rem;
   font-weight: 650;
 }
@@ -2959,44 +2995,41 @@ textarea:focus-visible {
   }
 }
 
-/* ===== Dark theme — "stealth" cybersecurity palette =====
-   Layered navy-charcoals, never pure black. Surface = base + tint steps.
-   Accent = muted electric cyan, used sparingly for emphasis. */
+/* ===== Dark theme — MalDet Deep Forest palette ===== */
 
 :root[data-theme="dark"] {
-  /* Base ramp: violet-tinted charcoals — purple identity, zero pure black */
-  --color-white: #0d0b16;            /* base surface */
-  --color-lavender-soft: #14111f;   /* raised surface */
-  --color-lavender-mid: #1b1730;    /* overlay surface */
-  --color-lavender: #292244;        /* interactive surface */
-  --color-purple-muted: #a78bfa;    /* muted violet foreground */
-  --color-text: #e6e1f2;
-  --color-text-muted: #b4aecb;
-  --color-border: #2e2846;
-  --color-border-strong: #453a68;
-  --color-primary: #a78bfa;         /* soft neon violet */
-  --color-primary-hover: #c4b0fd;
-  --color-primary-deep: #1b1730;
-  --color-success: #4ade80;
-  --color-error: #f87171;
-  --color-shadow: rgba(2, 4, 10, 0.5);
-  --color-shadow-strong: rgba(2, 4, 10, 0.7);
-  --color-glow: rgba(167, 139, 250, 0.16);
-  --color-grid: rgba(167, 139, 250, 0.06);
-  --color-accent: #a78bfa;
-  --color-accent-soft: rgba(167, 139, 250, 0.09);
-  --color-accent-glow: rgba(167, 139, 250, 0.22);
+  --color-white: #05110c;            /* base surface (--forest-950) */
+  --color-lavender-soft: #0a1d15;    /* raised surface (--forest-900) */
+  --color-lavender-mid: #10291f;     /* overlay surface (--forest-800) */
+  --color-lavender: #193a2c;         /* interactive surface (--forest-700) */
+  --color-purple-muted: #a3d9b8;     /* jade foreground */
+  --color-text: #f1f0e8;             /* warm ivory (--on-forest) */
+  --color-text-muted: #a8b8ad;       /* (--on-forest-muted) */
+  --color-border: rgba(241, 240, 232, 0.12);
+  --color-border-strong: rgba(163, 217, 184, 0.35);
+  --color-primary: #a3d9b8;          /* jade (--green-glow) */
+  --color-primary-hover: #b9e4c9;
+  --color-primary-deep: #10291f;
+  --color-success: #6cc28a;
+  --color-error: #e86a5a;
+  --color-shadow: rgba(2, 8, 5, 0.55);
+  --color-shadow-strong: rgba(2, 8, 5, 0.78);
+  --color-glow: rgba(163, 217, 184, 0.18);
+  --color-grid: rgba(163, 217, 184, 0.06);
+  --color-accent: #a3d9b8;
+  --color-accent-soft: rgba(163, 217, 184, 0.12);
+  --color-accent-glow: rgba(163, 217, 184, 0.28);
 
-  /* Brand surface: deep violet-navy — purple identity, calm depth */
-  --color-surface-strong-from: #17132b;
-  --color-surface-strong-mid: #120f22;
-  --color-surface-strong-to: #0d0b19;
+  /* Brand surface: deep forest green */
+  --color-surface-strong-from: #133124;
+  --color-surface-strong-mid: #0a1d15;
+  --color-surface-strong-to: #05110c;
 
-  /* Elevation: shadows alone vanish on dark; pair with lighter tints. */
+  /* Elevation */
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-2: 0 2px 8px rgba(0, 0, 0, 0.45);
-  --shadow-3: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  --shadow-4: 0 16px 48px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --shadow-3: 0 8px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --shadow-4: 0 16px 48px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   --shadow-card: var(--shadow-3);
   --shadow-card-hover: var(--shadow-4);
   --shadow-glow: 0 0 2.5rem var(--color-glow);
@@ -3009,11 +3042,11 @@ textarea:focus-visible {
 }
 
 :root[data-theme="dark"] .site-header {
-  background: color-mix(in srgb, var(--color-white) 84%, transparent);
+  background: color-mix(in srgb, var(--color-white) 86%, transparent);
 }
 
 :root[data-theme="dark"] .eyebrow {
-  color: #c4b0fd;
+  color: #a3d9b8;
   font-size: 0.8rem;
 }
 
@@ -3022,7 +3055,7 @@ textarea:focus-visible {
 :root[data-theme="dark"] .documentation-hero .eyebrow,
 :root[data-theme="dark"] .problem-section .eyebrow,
 :root[data-theme="dark"] .inquiries-section .eyebrow {
-  color: #cbb9ff;
+  color: #b9e4c9;
 }
 
 :root[data-theme="dark"] .hero-copy h1 {
@@ -3090,7 +3123,10 @@ textarea:focus-visible {
 }
 
 :root[data-theme="dark"] .hero-section {
-  background: linear-gradient(145deg, var(--color-white) 48%, #131022 78%, #1a1530 100%);
+  background:
+    radial-gradient(60% 55% at 78% 30%, rgba(163, 217, 184, 0.13), transparent 70%),
+    radial-gradient(45% 45% at 10% 90%, rgba(25, 58, 44, 0.9), transparent 70%),
+    linear-gradient(180deg, #0a1d15 0%, #05110c 100%);
 }
 
 :root[data-theme="dark"] .trust-note,
@@ -3856,4 +3892,542 @@ html.theme-transition .marquee {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+
+/* ===== MalDet Commercial Custom Components ===== */
+
+/* IBM Plex Serif display headings (authentic MalDet voice) */
+.hero-copy h1,
+.section-heading h2,
+.closing-panel h2,
+.interface-copy h2,
+.inquiry-copy h2,
+.maldet-serif {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.022em;
+}
+
+.hero-copy h1 em,
+.section-heading h2 em,
+.closing-panel h2 em,
+.interface-copy h2 em,
+.inquiry-copy h2 em {
+  font-style: italic;
+  color: var(--color-primary);
+}
+
+.section-heading-light h2 em,
+.closing-panel h2 em,
+.inquiry-copy h2 em {
+  color: var(--green-glow);
+}
+
+/* Brand lockup — MalDet Shield + Magnifying Glass */
+.maldet-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+
+.site-footer .maldet-brand,
+.approval-icon .maldet-brand {
+  color: var(--on-forest);
+}
+
+.maldet-brand-mark {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 0.55rem;
+  background: var(--forest-900);
+  color: var(--green-glow);
+  display: grid;
+  place-items: center;
+  flex: none;
+  box-shadow: 0 2px 8px rgba(5, 17, 12, 0.22), inset 0 0 0 1px rgba(163, 217, 184, 0.22);
+}
+
+:root[data-theme="dark"] .maldet-brand-mark {
+  background: var(--forest-800);
+}
+
+.maldet-brand-badge {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: var(--color-lavender-mid);
+  color: var(--color-primary);
+  border: 1px solid var(--color-border-strong);
+}
+
+.site-footer .maldet-brand-badge {
+  background: rgba(163, 217, 184, 0.12);
+  color: var(--green-glow);
+  border-color: rgba(163, 217, 184, 0.28);
+}
+
+/* Header direct Launch Scanner button */
+.header-cta-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-pill);
+  background: var(--green);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid var(--green);
+  box-shadow: 0 2px 8px rgba(15, 26, 20, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: transform var(--transition-fast), background-color var(--transition-fast), box-shadow var(--transition-fast);
+  white-space: nowrap;
+}
+
+.header-cta-link:hover {
+  background: var(--green-hover);
+  border-color: var(--green-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(15, 26, 20, 0.26);
+}
+
+:root[data-theme="dark"] .header-cta-link {
+  background: var(--green-glow);
+  border-color: var(--green-glow);
+  color: var(--forest-900);
+}
+
+:root[data-theme="dark"] .header-cta-link:hover {
+  background: var(--green-glow-hover);
+  border-color: var(--green-glow-hover);
+}
+
+.header-cta-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 50%;
+  background: #6cc28a;
+  box-shadow: 0 0 0 3px rgba(108, 194, 138, 0.28);
+}
+
+:root[data-theme="dark"] .header-cta-dot {
+  background: var(--forest-900);
+  box-shadow: 0 0 0 2px rgba(10, 29, 21, 0.25);
+}
+
+@media (max-width: 56rem) {
+  .header-cta-label-full {
+    display: none;
+  }
+}
+
+/* Action link styled identically to ActionButton */
+a.action-button {
+  text-decoration: none;
+}
+
+/* MalDet Seal Badges & Level Scales */
+.maldet-seal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.22rem 0.68rem;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #0f1a14;
+  white-space: nowrap;
+}
+
+.maldet-seal-safe { background: var(--safe); }
+.maldet-seal-low { background: var(--low); }
+.maldet-seal-medium { background: var(--medium); }
+.maldet-seal-high { background: var(--high); }
+.maldet-seal-critical { background: var(--critical); }
+
+.maldet-level-scale {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  width: 100%;
+}
+
+.maldet-level-step {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-border);
+}
+
+.maldet-level-step.is-on {
+  box-shadow: 0 0 0 1px var(--color-white), 0 0 0 2px currentColor;
+}
+
+.maldet-level-step-safe.is-on { background: var(--safe); color: var(--safe-text); }
+.maldet-level-step-low.is-on { background: var(--low); color: var(--low-text); }
+.maldet-level-step-medium.is-on { background: var(--medium); color: var(--medium-text); }
+.maldet-level-step-high.is-on { background: var(--high); color: var(--high-text); }
+.maldet-level-step-critical.is-on { background: var(--critical); color: var(--critical-text); }
+
+/* Hero Dual Verdict Card */
+.maldet-hero-card {
+  width: 100%;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
+  background: var(--color-white);
+  box-shadow: var(--shadow-4);
+  overflow: hidden;
+}
+
+.maldet-hero-card-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-lavender-soft);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.maldet-hero-card-dots {
+  display: inline-flex;
+  gap: 5px;
+}
+
+.maldet-hero-card-dots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-border-strong);
+}
+
+.maldet-hero-card-body {
+  padding: 1.4rem 1.35rem;
+}
+
+.maldet-repo-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.15rem;
+  flex-wrap: wrap;
+}
+
+.maldet-repo-title {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.maldet-repo-owner {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  display: block;
+}
+
+.maldet-axes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1.15rem;
+}
+
+@media (max-width: 34rem) {
+  .maldet-axes-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.maldet-axis-box {
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-lavender-soft);
+}
+
+.maldet-axis-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.maldet-axis-score {
+  font-size: 2.1rem;
+  font-weight: 700;
+  line-height: 1.1;
+  margin: 0.55rem 0 0.7rem;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.maldet-axis-score small {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  margin-left: 0.35rem;
+}
+
+.maldet-triage-strip {
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-lavender-soft);
+  margin-bottom: 1.1rem;
+}
+
+.maldet-triage-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  margin-bottom: 0.45rem;
+}
+
+.maldet-stack-bar {
+  display: flex;
+  height: 7px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--color-border);
+  gap: 2px;
+}
+
+.maldet-stack-real { background: var(--critical); }
+.maldet-stack-unsure { background: var(--medium); }
+.maldet-stack-noise { background: var(--safe); }
+
+.maldet-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.84rem;
+}
+
+.maldet-card-footer a {
+  color: var(--color-primary);
+  font-weight: 650;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.maldet-card-footer a:hover {
+  text-decoration: underline;
+}
+
+/* Detection Engines 8-card grid on Page 2 */
+.tools-section {
+  background: var(--color-white);
+}
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+
+@media (max-width: 68rem) {
+  .tools-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 38rem) {
+  .tools-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tool-engine-card {
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-lavender-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-height: 15.5rem;
+}
+
+.tool-engine-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.tool-engine-icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
+  background: var(--forest-900);
+  color: var(--green-glow);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.tool-axis-tag {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid;
+}
+
+.tool-axis-vulnerability {
+  color: #2f6f99;
+  border-color: #b8d4e8;
+  background: #eaf3f9;
+}
+
+.tool-axis-malicious {
+  color: #b2521c;
+  border-color: #f0c4a8;
+  background: #fdf1e8;
+}
+
+.tool-axis-triage {
+  color: #1f5a40;
+  border-color: #c9dccd;
+  background: #e7efe8;
+}
+
+:root[data-theme="dark"] .tool-axis-vulnerability {
+  color: #8bb8d6;
+  border-color: rgba(139, 184, 214, 0.35);
+  background: rgba(139, 184, 214, 0.12);
+}
+
+:root[data-theme="dark"] .tool-axis-malicious {
+  color: #ee9055;
+  border-color: rgba(238, 144, 85, 0.35);
+  background: rgba(238, 144, 85, 0.12);
+}
+
+:root[data-theme="dark"] .tool-axis-triage {
+  color: #a3d9b8;
+  border-color: rgba(163, 217, 184, 0.35);
+  background: rgba(163, 217, 184, 0.12);
+}
+
+.tool-engine-card h3 {
+  margin: 0.25rem 0 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.tool-engine-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.58;
+  color: var(--color-text-muted);
+}
+
+/* Mockup UI Previews inside BrowserFrame */
+.ui-mockup-canvas {
+  padding: 1.35rem;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 21rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.84rem;
+}
+
+:root[data-theme="dark"] .ui-mockup-canvas {
+  background: #0a1d15;
+  color: #f1f0e8;
+}
+
+.ui-mockup-dark {
+  background: var(--forest-900);
+  color: var(--on-forest);
+}
+
+.ui-mockup-urlbar {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  background: var(--forest-950);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+.ui-mockup-btn {
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  background: var(--green-glow);
+  color: var(--forest-900);
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.ui-mockup-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.76rem;
+}
+
+.ui-mockup-table th {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+}
+
+.ui-mockup-table td {
+  padding: 0.55rem 0.6rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.team-photo-placeholder {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px dashed var(--color-border-strong);
+  display: inline-block;
+  margin-top: 0.45rem;
 }

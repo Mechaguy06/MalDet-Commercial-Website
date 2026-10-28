@@ -3,25 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SECURA — Secure Web Platform for AI Document Anonymization</title>
+    <title>MalDet — AI-Driven Malware Detection & Trust Scoring for GitHub Repositories</title>
     <meta
       name="description"
-      content="SECURA is a secure web platform for automated AI document anonymization, helping organizations protect sensitive information while enabling safe cross-department collaboration."
+      content="MalDet scans public GitHub repositories with six detection engines, filters noise with a Random Forest classifier, and delivers clear Vulnerability and Malicious-Pattern verdicts."
     />
-    <meta property="og:title" content="SECURA — AI Document Anonymization" />
+    <meta property="og:title" content="MalDet — AI-Driven Malware Detection & Trust Scoring" />
     <meta
       property="og:description"
-      content="A secure web platform for automated AI document anonymization and controlled cross-department collaboration."
+      content="Know what a repository hides before you run it. Multi-engine static analysis and supply-chain risk scanning for public GitHub repositories."
     />
     <meta property="og:type" content="website" />
-    <meta name="theme-color" content="#2d0878" />
+    <meta name="theme-color" content="#0a1d15" />
     <link rel="icon" href="/favicon.svg" />
     <script>
       // Prevent theme flash: apply stored/system theme before first paint.
       ;(function () {
         var stored = null
         try {
-          stored = localStorage.getItem("secura-theme")
+          stored = localStorage.getItem("maldet-theme")
         } catch (e) {}
         var theme =
           stored === "light" || stored === "dark"
