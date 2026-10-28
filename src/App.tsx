@@ -642,8 +642,8 @@ function Brand() {
         className="maldet-brand-logo"
         src="/assets/maldet-logo.png"
         alt="MalDet logo"
-        width={424}
-        height={424}
+        width={723}
+        height={1024}
       />
       <span>MalDet</span>
       <span className="maldet-brand-badge">Scanner</span>
