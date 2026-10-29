@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react"
 import Lenis from "lenis"
+import { motion, useReducedMotion, useScroll } from "motion/react"
 
 type Page = "about" | "documentation" | "contact"
 
@@ -12,21 +13,22 @@ const MALDET_LOGO_SRC = "/assets/maldet-logo.png"
 function getInitialPage(): Page {
   if (typeof window === "undefined") return "about"
   const hash = window.location.hash.replace(/^#\/?/, "").toLowerCase()
-  if (hash === "documentation" || hash === "tools" || hash === "history" || hash === "scan") {
-    return "documentation"
-  }
-  if (hash === "contact" || hash === "team") {
-    return "contact"
-  }
+  if (hash === "documentation" || hash === "tools" || hash === "how-it-works") return "documentation"
+  if (hash === "contact" || hash === "team" || hash === "about-us") return "contact"
   return "about"
 }
 
 type RiskLevel = "Safe" | "Low" | "Medium" | "High" | "Critical"
 
+function RiskSeal({ level }: { level: RiskLevel }) {
+  const cls = `seal-badge seal-${level.toLowerCase()}`
+  return <span className={cls}>{level}</span>
+}
+
 function LevelScale({ active }: { active: RiskLevel }) {
   const steps: RiskLevel[] = ["Safe", "Low", "Medium", "High", "Critical"]
   return (
-    <span className="level-scale" role="img" aria-label={`Level: ${active}`}>
+    <div className="level-scale" aria-hidden="true">
       {steps.map((step) => {
         const key = step.toLowerCase()
         const isOn = step === active
@@ -37,7 +39,7 @@ function LevelScale({ active }: { active: RiskLevel }) {
           />
         )
       })}
-    </span>
+    </div>
   )
 }
 
@@ -45,72 +47,198 @@ function LevelScale({ active }: { active: RiskLevel }) {
    Authentic MalDet Data (from http://103.233.1.97:5000/)
    ============================================================ */
 
-const TOOLS_DATA = [
+const PIPELINE_STEPS = [
   {
-    icon: "bi-filetype-py",
-    name: "Bandit",
-    axis: "Vulnerability",
-    axisClass: "axis-tag--vulnerability",
-    desc: "Finds common security mistakes in Python code, such as shell injection, unsafe deserialisation and hard-coded passwords."
+    n: "01",
+    title: "Fetch",
+    body: "Pull repository metadata and a shallow archive from GitHub."
   },
   {
-    icon: "bi-code-square",
-    name: "Semgrep",
-    axis: "Vulnerability",
-    axisClass: "axis-tag--vulnerability",
-    desc: "Pattern-based code analysis across many languages, using community security rules."
+    n: "02",
+    title: "Unpack",
+    body: "Extract into an isolated workspace; skip binaries and oversized files."
   },
   {
-    icon: "bi-box-seam",
-    name: "pip-audit",
-    axis: "Vulnerability",
-    axisClass: "axis-tag--vulnerability",
-    desc: "Checks pinned Python dependencies against known CVE advisories, without installing or building anything."
+    n: "03",
+    title: "Detect",
+    body: "Run Bandit, Semgrep, pip-audit, YARA, ClamAV, GuardDog, and the dependency checker."
   },
   {
-    icon: "bi-fingerprint",
-    name: "YARA",
-    axis: "Malicious pattern",
-    axisClass: "axis-tag--malicious-pattern",
-    desc: "Matches files against signature rules for malware families, droppers and obfuscated payloads."
+    n: "04",
+    title: "Triage",
+    body: "Score every finding with a Random Forest model to down-rank false positives."
   },
   {
-    icon: "bi-virus",
-    name: "ClamAV",
-    axis: "Malicious pattern",
-    axisClass: "axis-tag--malicious-pattern",
-    desc: "Open-source antivirus engine that scans every file, including ones inside extracted archives."
-  },
-  {
-    icon: "bi-shield-lock",
-    name: "GuardDog",
-    axis: "Malicious pattern",
-    axisClass: "axis-tag--malicious-pattern",
-    desc: "Looks for supply-chain attack behaviour: data exfiltration, install hooks and suspicious downloads."
-  },
-  {
-    icon: "bi-diagram-3",
-    name: "Dependency checker",
-    axis: "Malicious pattern",
-    axisClass: "axis-tag--malicious-pattern",
-    desc: "Built for MalDet. Flags typosquatted package names, direct-URL installs and unpinned versions."
-  },
-  {
-    icon: "bi-cpu",
-    name: "Risk classifier",
-    axis: "Triage",
-    axisClass: "axis-tag--triage",
-    desc: "Built for MalDet. A Random Forest model trained on real scan data that rates each finding's likelihood of being real."
+    n: "05",
+    title: "Score",
+    body: "Roll findings into separate Vulnerability and Malicious-pattern levels and generate an LLM summary."
   }
 ]
 
-const RECENT_SCANS = [
+const TOOLS_LIST = [
+  {
+    code: "Py",
+    axis: "Vulnerability",
+    axisClass: "axis-tag--vulnerability",
+    name: "Bandit",
+    desc: "Walks Python abstract syntax trees to catch risky calls such as eval, subprocess with a shell, weak cryptography, and hardcoded secrets."
+  },
+  {
+    code: "Sg",
+    axis: "Vulnerability",
+    axisClass: "axis-tag--vulnerability",
+    name: "Semgrep",
+    desc: "Pattern-aware static analysis across Python, JavaScript, TypeScript, Go, Java, Ruby, and PHP using community security rulesets."
+  },
+  {
+    code: "CV",
+    axis: "Vulnerability",
+    axisClass: "axis-tag--vulnerability",
+    name: "pip-audit",
+    desc: "Checks declared dependencies against the Python Packaging Advisory Database and OSV to flag packages with known CVEs."
+  },
+  {
+    code: "YR",
+    axis: "Malicious pattern",
+    axisClass: "axis-tag--malicious-pattern",
+    name: "YARA",
+    desc: "Matches source files against custom rules for obfuscated payloads, reverse shells, credential harvesters, and encoded droppers."
+  },
+  {
+    code: "AV",
+    axis: "Malicious pattern",
+    axisClass: "axis-tag--malicious-pattern",
+    name: "ClamAV",
+    desc: "Signature antivirus engine that catches known trojans, backdoors, and packed binaries committed into a repository."
+  },
+  {
+    code: "GD",
+    axis: "Malicious pattern",
+    axisClass: "axis-tag--malicious-pattern",
+    name: "GuardDog",
+    desc: "DataDog's supply-chain heuristics for PyPI and npm packages — detects install-time code execution, exfiltration, and shady metadata."
+  },
+  {
+    code: "Dp",
+    axis: "Malicious pattern",
+    axisClass: "axis-tag--malicious-pattern",
+    name: "Dependency checker",
+    desc: "Compares requirement files against popular package names using edit-distance and keyboard-layout rules to spot typosquatting."
+  },
+  {
+    code: "ML",
+    axis: "Triage",
+    axisClass: "axis-tag--triage",
+    name: "Risk classifier",
+    desc: "A scikit-learn Random Forest trained on engineered features (file path, entropy, severity, engine agreement) to separate real issues from noise."
+  }
+]
+
+interface SiemFinding {
+  id: string
+  severity: "HIGH" | "MEDIUM" | "LOW"
+  sealLevel: RiskLevel
+  engine: string
+  category: string
+  description: string
+  location: string
+  triageLabel: "Likely real" | "Uncertain" | "Likely noise"
+  confidence: number
+}
+
+const SIEM_FINDINGS: SiemFinding[] = [
+  {
+    id: "f-1",
+    severity: "HIGH",
+    sealLevel: "High",
+    engine: "Dependency Check",
+    category: "Known CVE",
+    description:
+      "Vulnerability found in requests version 2.31.0: CVE-2026-59951 ( Requests-2.31.0.dist-info )",
+    location: "requirements.txt · requests==2.31.0",
+    triageLabel: "Likely real",
+    confidence: 80
+  },
+  {
+    id: "f-2",
+    severity: "HIGH",
+    sealLevel: "High",
+    engine: "Dependency Check",
+    category: "Known CVE",
+    description:
+      "Vulnerability found in werkzeug version 3.0.1: CVE-2026-114603 ( Werkzeug-3.0.1.dist-info )",
+    location: "requirements.txt · werkzeug==3.0.1",
+    triageLabel: "Likely real",
+    confidence: 80
+  },
+  {
+    id: "f-3",
+    severity: "HIGH",
+    sealLevel: "High",
+    engine: "Semgrep",
+    category: "SQL Injection",
+    description:
+      "Avoiding SQL string concatenation: untrusted input concatenated with raw SQL query can result in SQL Injection.",
+    location: "scanner/db_helper.py:42",
+    triageLabel: "Likely real",
+    confidence: 78
+  },
+  {
+    id: "f-4",
+    severity: "HIGH",
+    sealLevel: "High",
+    engine: "YARA",
+    category: "Suspicious Pattern",
+    description:
+      "YARA rule Base64_Encoded_Exec_Pattern matched in test fixture sample_payload_fixture.py.",
+    location: "tests/fixtures/sample_payload_fixture.py:18",
+    triageLabel: "Uncertain",
+    confidence: 54
+  },
+  {
+    id: "f-5",
+    severity: "MEDIUM",
+    sealLevel: "Medium",
+    engine: "Bandit",
+    category: "Subprocess Call",
+    description:
+      "B603: subprocess call — check for execution of untrusted input in repository archive unpacker.",
+    location: "scanner/orchestrator.py:119",
+    triageLabel: "Uncertain",
+    confidence: 48
+  },
+  {
+    id: "f-6",
+    severity: "LOW",
+    sealLevel: "Low",
+    engine: "Bandit",
+    category: "Assert Used",
+    description:
+      "B101: Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
+    location: "tests/test_classifier.py:27",
+    triageLabel: "Likely noise",
+    confidence: 14
+  },
+  {
+    id: "f-7",
+    severity: "LOW",
+    sealLevel: "Low",
+    engine: "YARA",
+    category: "Heuristic String",
+    description:
+      "YARA rule Suspicious_Socket_Import matched inside documentation example snippet.",
+    location: "docs/examples/socket_demo.md:12",
+    triageLabel: "Likely noise",
+    confidence: 11
+  }
+]
+
+const RECENT_SCANS_LEDGER = [
   {
     id: 201,
-    name: "maldet",
     owner: "Skidotus",
-    stars: 1,
-    lang: "Python",
+    repo: "maldet",
+    lang: "HTML",
     vulnLevel: "Medium" as RiskLevel,
     vulnScore: 76,
     malLevel: "Medium" as RiskLevel,
@@ -118,242 +246,106 @@ const RECENT_SCANS = [
     date: "25 Oct 2026"
   },
   {
-    id: 365,
-    name: "artcraft",
+    id: 200,
     owner: "storytold",
-    stars: 22936,
-    lang: "Rust",
-    vulnLevel: "Low" as RiskLevel,
-    vulnScore: 3,
-    malLevel: "Low" as RiskLevel,
-    malScore: 6,
-    date: "13 Oct 2026"
+    repo: "artcraft",
+    lang: "TypeScript",
+    vulnLevel: "Safe" as RiskLevel,
+    vulnScore: 0,
+    malLevel: "Medium" as RiskLevel,
+    malScore: 25,
+    date: "20 Oct 2026"
   },
   {
-    id: 364,
-    name: "gods-eye-view",
+    id: 199,
     owner: "bilawalsidhu",
-    stars: 54046,
-    lang: "JavaScript",
-    vulnLevel: "Safe" as RiskLevel,
-    vulnScore: 0,
-    malLevel: "High" as RiskLevel,
-    malScore: 63,
-    date: "13 Oct 2026"
+    repo: "gods-eye-view",
+    lang: "TypeScript",
+    vulnLevel: "Low" as RiskLevel,
+    vulnScore: 12,
+    malLevel: "Medium" as RiskLevel,
+    malScore: 16,
+    date: "20 Oct 2026"
   },
   {
-    id: 294,
-    name: "agent-router",
+    id: 198,
     owner: "theagentrouter",
-    stars: 2192,
-    lang: "Go",
-    vulnLevel: "Medium" as RiskLevel,
-    vulnScore: 74,
-    malLevel: "Low" as RiskLevel,
-    malScore: 3,
-    date: "07 Oct 2026"
-  },
-  {
-    id: 14,
-    name: "core",
-    owner: "home-assistant",
-    stars: 91283,
-    lang: "Python",
-    vulnLevel: "Safe" as RiskLevel,
-    vulnScore: 0,
+    repo: "agent-router",
+    lang: "TypeScript",
+    vulnLevel: "High" as RiskLevel,
+    vulnScore: 100,
     malLevel: "High" as RiskLevel,
     malScore: 86,
-    date: "07 Oct 2026"
+    date: "20 Oct 2026"
   },
   {
-    id: 11,
-    name: "nextcloud-mcp-server",
-    owner: "cbcoutinho",
-    stars: 376,
-    lang: "Python",
-    vulnLevel: "Critical" as RiskLevel,
-    vulnScore: 531,
-    malLevel: "Medium" as RiskLevel,
-    malScore: 21,
-    date: "07 Oct 2026"
-  },
-  {
-    id: 13,
-    name: "clawmetry",
-    owner: "vivekchand",
-    stars: 424,
-    lang: "Python",
-    vulnLevel: "Critical" as RiskLevel,
-    vulnScore: 584,
-    malLevel: "Critical" as RiskLevel,
-    malScore: 317,
-    date: "07 Oct 2026"
-  },
-  {
-    id: 12,
-    name: "hongbomiao.com",
-    owner: "hongbo-miao",
-    stars: 299,
-    lang: "Python",
-    vulnLevel: "Critical" as RiskLevel,
-    vulnScore: 1562,
-    malLevel: "Low" as RiskLevel,
-    malScore: 15,
-    date: "07 Oct 2026"
-  },
-  {
-    id: 7,
-    name: "seclab-taskflow-agent",
-    owner: "GitHubSecurityLab",
-    stars: 262,
-    lang: "Python",
-    vulnLevel: "High" as RiskLevel,
-    vulnScore: 86,
-    malLevel: "Low" as RiskLevel,
-    malScore: 2,
-    date: "07 Oct 2026"
-  },
-  {
-    id: 8,
-    name: "pass-culture-main",
-    owner: "pass-culture",
-    stars: 194,
+    id: 197,
+    owner: "home-assistant",
+    repo: "core",
     lang: "Python",
     vulnLevel: "Safe" as RiskLevel,
     vulnScore: 0,
-    malLevel: "Medium" as RiskLevel,
-    malScore: 30,
-    date: "07 Oct 2026"
-  }
-]
-
-interface ConsoleEventItem {
-  id: string
-  sev: "high" | "medium" | "low"
-  tool: string
-  toolKey: string
-  axis: string
-  text: string
-  loc: string
-  conf: number
-  isNoise: boolean
-  snippet: string
-}
-
-const REPORT_201_EVENTS: ConsoleEventItem[] = [
-  {
-    id: "ev-1",
-    sev: "high",
-    tool: "Dependency checker",
-    toolKey: "dependency_checker",
-    axis: "Vulnerability",
-    text: "CVE found: CVE-2026-59951 in mcp==1.29.0 — In affected versions, a Streamable HTTP transport session handling flaw allows unauthenticated request injection.",
-    loc: "/requirements.txt:14",
-    conf: 99,
-    isNoise: false,
-    snippet: "mcp==1.29.0"
+    malLevel: "Safe" as RiskLevel,
+    malScore: 0,
+    date: "20 Oct 2026"
   },
   {
-    id: "ev-2",
-    sev: "high",
-    tool: "Dependency checker",
-    toolKey: "dependency_checker",
-    axis: "Vulnerability",
-    text: "CVE found: CVE-2026-114603 in werkzeug==3.0.1 — Multipart form parser resource exhaustion when handling specially crafted boundary strings.",
-    loc: "/requirements.txt:8",
-    conf: 96,
-    isNoise: false,
-    snippet: "werkzeug==3.0.1"
+    id: 196,
+    owner: "cbcoutinho",
+    repo: "nextcloud-mcp-server",
+    lang: "Python",
+    vulnLevel: "Medium" as RiskLevel,
+    vulnScore: 28,
+    malLevel: "High" as RiskLevel,
+    malScore: 100,
+    date: "20 Oct 2026"
   },
   {
-    id: "ev-3",
-    sev: "high",
-    tool: "Semgrep",
-    toolKey: "semgrep",
-    axis: "Vulnerability",
-    text: "Avoiding SQL string concatenation: untrusted input concatenated with raw SQL query can result in SQL Injection. In order to execute raw query safely, prepared statement should be used.",
-    loc: "/backfill_summaries.py:64",
-    conf: 78,
-    isNoise: false,
-    snippet: "cur.execute(sql, params)"
-  },
-  {
-    id: "ev-4",
-    sev: "high",
-    tool: "Semgrep",
-    toolKey: "semgrep",
-    axis: "Vulnerability",
-    text: "Avoiding SQL string concatenation: untrusted input concatenated with raw SQL query can result in SQL Injection. SQLAlchemy provides TextualSQL to easily use prepared statement.",
-    loc: "/backfill_summaries.py:78",
-    conf: 53,
-    isNoise: false,
-    snippet: "conn.execute(f\"SELECT * FROM scans WHERE id = {scan_id}\")"
-  },
-  {
-    id: "ev-5",
-    sev: "medium",
-    tool: "Bandit",
-    toolKey: "bandit",
-    axis: "Vulnerability",
-    text: "B603: subprocess call - check for execution of untrusted input in scanner archive extraction routine.",
-    loc: "/scanner/unpack.py:52",
-    conf: 48,
-    isNoise: false,
-    snippet: "subprocess.run([\"7z\", \"x\", f\"-p{password}\", archive_path], check=False)"
-  },
-  {
-    id: "ev-6",
-    sev: "high",
-    tool: "YARA",
-    toolKey: "yara",
-    axis: "Malicious pattern",
-    text: "YARA rule Suspicious_Base64_Exec matched inside YARA rule definition file (self-match on detection signatures).",
-    loc: "/rules/malware_rules.yar:112",
-    conf: 18,
-    isNoise: true,
-    snippet: "$b64_exec = /eval\\(base64\\.b64decode\\(/ nocase"
-  },
-  {
-    id: "ev-7",
-    sev: "low",
-    tool: "Bandit",
-    toolKey: "bandit",
-    axis: "Vulnerability",
-    text: "B101: Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.",
-    loc: "/tests/test_classifier.py:27",
-    conf: 12,
-    isNoise: true,
-    snippet: "assert 0.0 <= confidence <= 1.0"
+    id: 195,
+    owner: "vivekchand",
+    repo: "clawmetry",
+    lang: "Python",
+    vulnLevel: "High" as RiskLevel,
+    vulnScore: 100,
+    malLevel: "High" as RiskLevel,
+    malScore: 100,
+    date: "20 Oct 2026"
   }
 ]
 
 /* ============================================================
-   Closing Full Project Title Plate (Exact MalDet Component)
+   Shared Closing Title Plate (Matches Live MalDet Bottom Plate)
    ============================================================ */
 function ProjectTitlePlate() {
   return (
-    <section
-      className="section section--paper project-title-section"
-      aria-labelledby="projectTitleFull"
-    >
+    <section className="section section--paper project-title-section">
       <div className="site-container">
         <div className="title-plate">
-          <h2 className="title-plate__text" id="projectTitleFull">
+          <p className="eyebrow eyebrow--on-dark">Full project title</p>
+          <h2 className="title-plate__text">
             Development of an AI‑Driven Malware Detection and Trust Scoring System for GitHub
-            Repositories
+            Repositories (MalDet)
           </h2>
           <p className="title-plate__meta">
-            Final Year Project &middot; Diploma in Cyber Security Technology &middot;
-            German-Malaysian Institute
+            Final Year Project · Diploma in Cyber Security Technology · German‑Malaysian Institute ·
+            2026
           </p>
-          <div style={{ marginTop: "1.5rem", display: "flex", justifyContent: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", justifyContent: "center", gap: "0.75rem", flexWrap: "wrap" }}>
             <a
               href={MALDET_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-ribbon btn-pill"
             >
-              Open Live MalDet Website <i className="bi bi-arrow-right ms-1" aria-hidden="true" />
+              Open Live MalDet System ↗
+            </a>
+            <a
+              href={MALDET_HISTORY_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-ghost-light btn-pill"
+            >
+              Browse 181 Scanned Repos ↗
             </a>
           </div>
         </div>
@@ -363,143 +355,186 @@ function ProjectTitlePlate() {
 }
 
 /* ============================================================
-   PAGE 1: OVERVIEW (Exact MalDet Hero, Stats, Project/Pipeline, Problem & Solution)
+   PAGE 1: OVERVIEW (Project Overview, Stats & Tally, Problem & Solution)
    ============================================================ */
 function OverviewPage({ onNavigate }: { onNavigate: (page: Page) => void }) {
   return (
     <>
-      {/* Exact MalDet Hero Section */}
-      <section className="hero" id="overview" aria-labelledby="heroTitle">
-        <div className="site-container">
+      {/* Hero — Deep Forest with Latest-Scan Preview Card */}
+      <section className="hero">
+        <div className="site-container hero__grid">
           <div className="hero__copy">
             <p className="eyebrow eyebrow--on-dark hero__eyebrow">
-              Final Year Project &middot; Development of an AI‑Driven Malware Detection and Trust
-              Scoring System for GitHub Repositories (MalDet)
+              <span className="live-dot" aria-hidden="true" />
+              Final Year Project · Diploma in Cyber Security Technology · German‑Malaysian Institute
             </p>
-            <h1 className="hero__title" id="heroTitle">
-              Know what a repository hides <em>before you run&nbsp;it.</em>
+            <h1 className="hero__title">
+              Know what a repository hides <em>before</em> you run it.
             </h1>
             <p className="hero__lede">
-              MalDet scans a public GitHub repository with six detection engines, sorts real issues
-              from noise with a machine-learning classifier, and gives you two clear verdicts: is
-              the code <strong>vulnerable</strong>, and does it look <strong>malicious</strong>?
+              <strong>MalDet</strong> scans public GitHub repositories with six detection engines,
+              filters noise with a Random Forest classifier, and reports two separate verdicts —{" "}
+              <strong>Vulnerability</strong> and <strong>Malicious pattern</strong> — so accidental
+              bugs are never confused with supply‑chain attacks.
             </p>
             <div className="hero__actions">
               <a
                 href={MALDET_SCAN_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn btn-ribbon btn-pill btn-lg-pill"
+                className="btn btn-ribbon btn-lg-pill"
               >
-                Scan a repository
+                Scan a repository ↗
               </a>
               <button
                 type="button"
                 onClick={() => onNavigate("documentation")}
-                className="btn btn-ghost-light btn-pill btn-lg-pill"
+                className="btn btn-ghost-light btn-lg-pill"
               >
-                How it works
+                How it works &amp; tools
               </button>
             </div>
           </div>
 
-          <div className="hero__preview">
-            <article className="preview-card" aria-label="Most recent scan">
-              <header className="preview-card__bar">
-                <span className="preview-card__dots" aria-hidden="true">
-                  <i />
-                  <i />
-                  <i />
-                </span>
-                <span className="preview-card__label">Latest scan</span>
-                <span className="preview-card__time">25 Oct 2026</span>
-              </header>
-              <div className="preview-card__body">
-                <div className="preview-card__repo">
+          {/* Authentic Latest-Scan Preview Card */}
+          <aside className="preview-card" aria-label="Latest scan preview">
+            <div className="preview-card__bar">
+              <span className="preview-card__dots">
+                <i />
+                <i />
+                <i />
+              </span>
+              <span className="preview-card__label">Latest scan</span>
+              <span className="preview-card__time">25 Oct 2026</span>
+            </div>
+            <div className="preview-card__body">
+              <div className="preview-card__repo">
+                <div>
                   <span className="preview-card__owner">Skidotus /</span>
-                  <span className="preview-card__name">maldet</span>
+                  <strong className="preview-card__name">maldet</strong>
                 </div>
-                <div className="preview-card__axes">
-                  <div className="axis-panel">
-                    <div className="axis-panel__head">
-                      <span>Vulnerability</span>
-                      <span className="seal-badge seal-medium">Medium</span>
-                    </div>
-                    <div className="axis-panel__score">
-                      76<small>score</small>
-                    </div>
-                    <LevelScale active="Medium" />
+                <span className="seal-badge seal-low" style={{ textTransform: "none" }}>
+                  HTML · Report #201
+                </span>
+              </div>
+
+              <div className="preview-card__axes">
+                <div className="axis-panel">
+                  <div className="axis-panel__head">
+                    <span>Vulnerability</span>
+                    <RiskSeal level="Medium" />
                   </div>
-                  <div className="axis-panel">
-                    <div className="axis-panel__head">
-                      <span>Malicious pattern</span>
-                      <span className="seal-badge seal-medium">Medium</span>
-                    </div>
-                    <div className="axis-panel__score">
-                      17<small>score</small>
-                    </div>
-                    <LevelScale active="Medium" />
+                  <div className="axis-panel__score">
+                    76<small>score</small>
                   </div>
+                  <LevelScale active="Medium" />
                 </div>
+
+                <div className="axis-panel">
+                  <div className="axis-panel__head">
+                    <span>Malicious pattern</span>
+                    <RiskSeal level="Medium" />
+                  </div>
+                  <div className="axis-panel__score">
+                    17<small>score</small>
+                  </div>
+                  <LevelScale active="Medium" />
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  flexWrap: "wrap",
+                  gap: "0.5rem"
+                }}
+              >
                 <a
-                  className="preview-card__link"
                   href={MALDET_REPORT_201_URL}
                   target="_blank"
                   rel="noopener noreferrer"
+                  className="preview-card__link"
                 >
-                  Open full report <i className="bi bi-arrow-right" aria-hidden="true" />
+                  Open live report #201 →
                 </a>
+                <button
+                  type="button"
+                  onClick={() => onNavigate("documentation")}
+                  className="btn btn-outline-parchment btn-sm-pill"
+                >
+                  Inspect UI preview
+                </button>
               </div>
-            </article>
-          </div>
+            </div>
+          </aside>
         </div>
       </section>
 
-      {/* Exact MalDet Stats Section */}
-      <section className="section section--paper stats" aria-labelledby="statsTitle">
+      {/* Live MalDet Statistics & Verdict Tally */}
+      <section className="section section--paper">
         <div className="site-container">
           <div className="section-head section-head--center">
-            <h2 className="section-title" id="statsTitle">
-              One scan. Six engines. <em>Two verdicts.</em>
-            </h2>
+            <p className="eyebrow">At a glance</p>
+            <h2 className="section-title">One scan. Six engines. Two verdicts.</h2>
             <p className="section-lede">
-              Running every tool by hand means reconciling six output formats and severity scales.
-              MalDet does that work and reduces it to two numbers you can act on.
+              Numbers below are read directly from the live MalDet scanner database at{" "}
+              <a
+                href={MALDET_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "var(--green-text)", fontWeight: 600 }}
+              >
+                103.233.1.97:5000
+              </a>{" "}
+              and update with every completed scan.
             </p>
           </div>
+
           <div className="stat-grid">
             <div className="stat-card">
               <div className="stat-card__value">181</div>
               <div className="stat-card__label">Repositories scanned</div>
-              <p>Every result is stored so you can compare a repository with its earlier scans.</p>
+              <p>Public GitHub projects analysed end‑to‑end and stored with a full audit trail.</p>
             </div>
+
             <div className="stat-card">
               <div className="stat-card__value">63,496</div>
               <div className="stat-card__label">Findings analysed</div>
-              <p>Each one is scored by the classifier for how likely it is to be a real issue.</p>
+              <p>
+                Individual signals triaged by the Random Forest classifier to separate real risk
+                from test‑file noise.
+              </p>
             </div>
+
             <div className="stat-card stat-card--split">
               <div className="stat-card__label">Worst verdict per repository</div>
               <ul className="verdict-tally">
                 <li>
                   <span className="dot dot--safe" />
-                  Safe<b>22</b>
+                  <span>Safe</span>
+                  <b>22</b>
                 </li>
                 <li>
                   <span className="dot dot--low" />
-                  Low<b>36</b>
+                  <span>Low</span>
+                  <b>36</b>
                 </li>
                 <li>
                   <span className="dot dot--medium" />
-                  Medium<b>37</b>
+                  <span>Medium</span>
+                  <b>37</b>
                 </li>
                 <li>
                   <span className="dot dot--high" />
-                  High<b>44</b>
+                  <span>High</span>
+                  <b>44</b>
                 </li>
                 <li>
                   <span className="dot dot--critical" />
-                  Critical<b>42</b>
+                  <span>Critical</span>
+                  <b>42</b>
                 </li>
               </ul>
             </div>
@@ -507,234 +542,240 @@ function OverviewPage({ onNavigate }: { onNavigate: (page: Page) => void }) {
         </div>
       </section>
 
-      {/* Exact MalDet Project & Pipeline Section */}
-      <section className="section section--paper" aria-labelledby="projectTitle">
-        <div className="site-container project">
-          <div className="project__copy">
-            <p className="eyebrow">The project</p>
-            <h2 className="section-title" id="projectTitle">
-              A second opinion for
-              <br />
-              <em>code you didn&apos;t write.</em>
-            </h2>
-            <p className="section-lede">
-              Developers clone, install and depend on public repositories every day, usually without
-              reading them. Attackers know that and hide malware in packages, archives and install
-              scripts. MalDet checks a repository for you before it reaches your machine.
-            </p>
-
-            <div className="accordion-list">
-              <details className="accordion-item" open>
-                <summary>
-                  <i className="bi bi-bug" aria-hidden="true" />
-                  Vulnerability verdict
-                </summary>
-                <p>
-                  Insecure coding patterns an attacker could exploit, such as injection, weak crypto
-                  or hard-coded secrets, plus known CVEs in the repository&apos;s pinned
-                  dependencies.
-                </p>
-              </details>
-              <details className="accordion-item">
-                <summary>
-                  <i className="bi bi-shield-exclamation" aria-hidden="true" />
-                  Malicious-pattern verdict
-                </summary>
-                <p>
-                  Signs that the code is meant to cause harm: malware signatures, obfuscated
-                  payloads, typosquatted package names and install-time hooks. It is scored
-                  separately, because a careless mistake and a deliberate attack are different
-                  risks.
-                </p>
-              </details>
-              <details className="accordion-item">
-                <summary>
-                  <i className="bi bi-funnel" aria-hidden="true" />
-                  Noise filtering with machine learning
-                </summary>
-                <p>
-                  Six engines on a large repository can produce tens of thousands of findings. A
-                  Random Forest classifier gives each finding a confidence that it is real, and that
-                  confidence weights the score instead of every alert counting the same.
-                </p>
-              </details>
-              <details className="accordion-item">
-                <summary>
-                  <i className="bi bi-chat-square-text" aria-hidden="true" />
-                  Plain-English summary
-                </summary>
-                <p>
-                  A local language model explains the main findings in a short paragraph. It only
-                  explains the results. The risk levels are decided before it sees anything, and it
-                  may not change them.
-                </p>
-              </details>
+      {/* Problem vs. Solution (Forest & Paper Ledger Comparison) */}
+      <section className="section section--white">
+        <div className="site-container">
+          <div className="section-head section-head--row">
+            <div>
+              <p className="eyebrow">Why MalDet exists</p>
+              <h2 className="section-title">
+                The open‑source supply chain problem — and our <em>solution</em>.
+              </h2>
+              <p className="section-lede">
+                Cloning an unfamiliar repository or installing its dependencies runs code on your
+                machine immediately. Traditional single‑purpose linters either miss deliberate
+                backdoors or bury developers under hundreds of false alarms.
+              </p>
             </div>
+            <a
+              href={MALDET_SCAN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-ribbon btn-pill"
+            >
+              Test a repository live ↗
+            </a>
           </div>
 
-          <div className="project__visual">
-            <div className="pipeline-card">
-              <p className="pipeline-card__title">How a scan runs</p>
-              <ol className="pipeline">
-                <li>
-                  <span className="pipeline__n">01</span>
-                  <div>
-                    <b>Fetch</b>
-                    <span>Repository metadata from the GitHub API, then a shallow clone.</span>
+          <div className="problem-solution-grid">
+            {/* Left Ledger Column: The Problem */}
+            <div className="ledger-column">
+              <p className="eyebrow" style={{ color: "var(--critical-text)" }}>
+                The Problem
+              </p>
+              <h3 className="section-title" style={{ fontSize: "1.65rem", marginBottom: "0.5rem" }}>
+                Why checking unfamiliar GitHub code is broken today
+              </h3>
+              <p className="section-lede" style={{ fontSize: "0.95rem" }}>
+                Students, researchers, and engineers routinely pull open‑source repositories
+                without a practical way to audit what hides inside them.
+              </p>
+
+              <ul className="ledger-item-list">
+                <li className="ledger-item">
+                  <div className="ledger-item__head">
+                    <span className="ledger-item__num">Problem 01</span>
+                    <h3>Blind trust in public repositories</h3>
                   </div>
+                  <p>
+                    Attackers weaponize seemingly helpful repositories and dependencies with hidden
+                    post‑install hooks, credential stealers, base64‑encoded reverse shells, and
+                    typosquatted package names.
+                  </p>
                 </li>
-                <li>
-                  <span className="pipeline__n">02</span>
-                  <div>
-                    <b>Unpack</b>
-                    <span>Archives are extracted, including password-protected ones.</span>
+
+                <li className="ledger-item">
+                  <div className="ledger-item__head">
+                    <span className="ledger-item__num">Problem 02</span>
+                    <h3>Fragmented tools &amp; overwhelming alert fatigue</h3>
                   </div>
+                  <p>
+                    Running Bandit, Semgrep, YARA, ClamAV, pip‑audit, and GuardDog manually requires
+                    six separate environments and produces thousands of low‑value warnings inside
+                    test suites, docs, and vendored folders.
+                  </p>
                 </li>
-                <li>
-                  <span className="pipeline__n">03</span>
-                  <div>
-                    <b>Detect</b>
-                    <span>Six engines inspect code, files and dependencies.</span>
+
+                <li className="ledger-item">
+                  <div className="ledger-item__head">
+                    <span className="ledger-item__num">Problem 03</span>
+                    <h3>Single scores conflate bugs with deliberate malware</h3>
                   </div>
+                  <p>
+                    A single blended "trust score" hides whether a repository simply has an outdated
+                    dependency or contains an active data‑exfiltration trojan — two risks that
+                    require completely different responses.
+                  </p>
                 </li>
-                <li>
-                  <span className="pipeline__n">04</span>
-                  <div>
-                    <b>Triage</b>
-                    <span>The classifier separates likely-real findings from noise.</span>
+              </ul>
+            </div>
+
+            {/* Right Ledger Column (Forest): The MalDet Solution */}
+            <div className="ledger-column ledger-column--forest">
+              <p className="eyebrow eyebrow--on-dark">The MalDet Solution</p>
+              <h3
+                className="section-title section-title--on-dark"
+                style={{ fontSize: "1.65rem", marginBottom: "0.5rem" }}
+              >
+                Automated multi‑engine detection with <em>ML triage</em>
+              </h3>
+              <p
+                className="section-lede"
+                style={{ fontSize: "0.95rem", color: "var(--on-forest-muted)" }}
+              >
+                Paste any GitHub URL and MalDet orchestrates static analysis, supply‑chain checks,
+                machine‑learning noise suppression, and plain‑English reporting in one workspace.
+              </p>
+
+              <ul className="ledger-item-list">
+                <li className="ledger-item">
+                  <div className="ledger-item__head">
+                    <span className="ledger-item__num">Solution 01</span>
+                    <h3>Isolated shallow‑archive unpack &amp; 6‑engine orchestration</h3>
                   </div>
+                  <p>
+                    MalDet downloads a shallow snapshot into a temporary sandbox — never executing
+                    repository code — and runs Bandit, Semgrep, pip‑audit, YARA, ClamAV, GuardDog,
+                    and the typosquat dependency checker in parallel.
+                  </p>
                 </li>
-                <li>
-                  <span className="pipeline__n">05</span>
-                  <div>
-                    <b>Score</b>
-                    <span>Two risk levels, from Safe to Critical, saved to your history.</span>
+
+                <li className="ledger-item">
+                  <div className="ledger-item__head">
+                    <span className="ledger-item__num">Solution 02</span>
+                    <h3>Scikit‑learn Random Forest false‑positive filter</h3>
                   </div>
+                  <p>
+                    Every raw finding is scored by a trained Random Forest classifier using file
+                    path context, Shannon entropy, rule severity, and cross‑engine agreement to
+                    label alerts as Likely real, Uncertain, or Likely noise.
+                  </p>
                 </li>
-              </ol>
+
+                <li className="ledger-item">
+                  <div className="ledger-item__head">
+                    <span className="ledger-item__num">Solution 03</span>
+                    <h3>Dual‑axis verdicts + local Ollama LLM briefing</h3>
+                  </div>
+                  <p>
+                    Findings roll into two independent 5‑level verdicts —{" "}
+                    <strong style={{ color: "var(--on-forest)" }}>Vulnerability</strong> and{" "}
+                    <strong style={{ color: "var(--on-forest)" }}>Malicious pattern</strong> — paired
+                    with a concise, plain‑English executive summary generated locally via Ollama.
+                  </p>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Problem & Solution Section (Using MalDet's .project Split, .stat-card & .pipeline-card) */}
-      <section className="section section--white" aria-labelledby="problemSolutionTitle">
-        <div className="site-container project">
-          <div className="project__copy">
-            <p className="eyebrow">Problem statement</p>
-            <h2 className="section-title" id="problemSolutionTitle">
-              Why checking public repositories is <em>hard by hand.</em>
+      {/* Authentic MalDet "About the project" Split + 5-Step Pipeline */}
+      <section className="section section--paper">
+        <div className="site-container project-split">
+          <div className="project-split__lead">
+            <p className="eyebrow">About the project</p>
+            <h2 className="section-title">
+              A second opinion for code you <em>didn&apos;t write</em>.
             </h2>
             <p className="section-lede">
-              Before MalDet, auditing an unfamiliar GitHub repository meant either trusting it
-              blindly or spending hours configuring separate security linters and reading thousands
-              of unranked alerts.
+              Developers install packages and clone repositories every day without time to read
+              every line. Traditional scanners either drown you in hundreds of low‑value warnings or
+              only check one angle.
+            </p>
+            <p className="section-lede">
+              MalDet combines static code analysis, signature scanning, supply‑chain heuristics, and
+              a trained machine‑learning classifier into a single workflow — then writes a short
+              plain‑English summary you can act on.
             </p>
 
-            <div style={{ display: "grid", gap: "1rem", marginTop: "1.75rem" }}>
-              <div className="stat-card">
-                <div className="axis-panel__head" style={{ marginBottom: "0.4rem" }}>
-                  <span className="stat-card__label" style={{ margin: 0, color: "var(--ink)" }}>
-                    01 &middot; Hidden supply-chain malware
-                  </span>
-                  <span className="seal-badge seal-critical">Problem</span>
-                </div>
+            <div className="accordion-list">
+              <details className="accordion-item" open>
+                <summary>
+                  <span className="accordion-icon">V</span>
+                  <span>Vulnerability verdict — accidental security weaknesses</span>
+                </summary>
                 <p>
-                  Malicious repositories disguise droppers, obfuscated payloads, typosquatted
-                  dependencies, and password-protected archives inside ordinary-looking source trees.
+                  Answers <em>&ldquo;Does this repo have accidental bugs or risky dependencies?&rdquo;</em>{" "}
+                  Combines Bandit (Python AST), Semgrep (multi‑language rules), and pip‑audit
+                  (known CVEs in dependencies) into a five‑level rating from Safe to Critical.
                 </p>
-              </div>
+              </details>
 
-              <div className="stat-card">
-                <div className="axis-panel__head" style={{ marginBottom: "0.4rem" }}>
-                  <span className="stat-card__label" style={{ margin: 0, color: "var(--ink)" }}>
-                    02 &middot; Six tools, six formats &amp; alert fatigue
-                  </span>
-                  <span className="seal-badge seal-high">Problem</span>
-                </div>
+              <details className="accordion-item">
+                <summary>
+                  <span className="accordion-icon">M</span>
+                  <span>Malicious‑pattern verdict — deliberate backdoors &amp; trojans</span>
+                </summary>
                 <p>
-                  Running Bandit, Semgrep, pip-audit, YARA, ClamAV, and GuardDog separately produces
-                  tens of thousands of raw alerts — mostly triggered by harmless test files and
-                  documentation snippets.
+                  Answers <em>&ldquo;Does this repo look intentionally harmful?&rdquo;</em> Uses YARA
+                  rules, ClamAV signatures, GuardDog supply‑chain heuristics, and typosquatting
+                  checks to catch obfuscated payloads, reverse shells, credential stealers, and
+                  suspicious install hooks.
                 </p>
-              </div>
+              </details>
 
-              <div className="stat-card">
-                <div className="axis-panel__head" style={{ marginBottom: "0.4rem" }}>
-                  <span className="stat-card__label" style={{ margin: 0, color: "var(--ink)" }}>
-                    03 &middot; Bugs vs. deliberate attacks
-                  </span>
-                  <span className="seal-badge seal-medium">Problem</span>
-                </div>
+              <details className="accordion-item">
+                <summary>
+                  <span className="accordion-icon">RF</span>
+                  <span>Noise filtering with machine learning</span>
+                </summary>
                 <p>
-                  A single combined score hides whether a repository merely has an outdated package
-                  CVE or is actively attempting to steal credentials.
+                  Static scanners regularly flag test fixtures, documentation examples, and benign
+                  utilities. A Random Forest classifier trained on finding metadata estimates the
+                  probability that each alert is a genuine risk, so the report highlights what
+                  matters first.
                 </p>
-              </div>
+              </details>
+
+              <details className="accordion-item">
+                <summary>
+                  <span className="accordion-icon">AI</span>
+                  <span>Plain‑English summary via local LLM</span>
+                </summary>
+                <p>
+                  Every report includes a short narrative generated by a local Ollama model that
+                  explains the headline findings in clear language — useful for students, reviewers,
+                  and non‑specialists who want the bottom line before diving into raw findings.
+                </p>
+              </details>
             </div>
           </div>
 
-          <div className="project__visual">
-            <div className="pipeline-card">
-              <p className="eyebrow eyebrow--on-dark">The MalDet solution</p>
-              <p className="pipeline-card__title">How MalDet solves it</p>
-              <ol className="pipeline">
-                <li>
-                  <span className="pipeline__n">
-                    <i className="bi bi-layers" aria-hidden="true" />
-                  </span>
+          {/* 5-step pipeline card */}
+          <div className="pipeline-card">
+            <p className="eyebrow eyebrow--on-dark">Pipeline</p>
+            <h3 className="pipeline-card__title">How a scan runs</h3>
+            <ol className="pipeline">
+              {PIPELINE_STEPS.map((step) => (
+                <li key={step.n}>
+                  <span className="pipeline__n">{step.n}</span>
                   <div>
-                    <b>Unified 6-Engine Static Sandbox</b>
-                    <span>
-                      Clones shallowly and extracts archives without executing any repository code,
-                      running all six engines plus custom dependency checks automatically.
-                    </span>
+                    <b>{step.title}</b>
+                    <span>{step.body}</span>
                   </div>
                 </li>
-                <li>
-                  <span className="pipeline__n">
-                    <i className="bi bi-cpu" aria-hidden="true" />
-                  </span>
-                  <div>
-                    <b>Random Forest False-Positive Triage</b>
-                    <span>
-                      Scores every finding for how likely it is to be real (`Likely real`,
-                      `Uncertain`, `Likely noise`) so test-fixture noise never drowns out genuine
-                      threats.
-                    </span>
-                  </div>
-                </li>
-                <li>
-                  <span className="pipeline__n">
-                    <i className="bi bi-shield-check" aria-hidden="true" />
-                  </span>
-                  <div>
-                    <b>Two Independent Verdicts + Local LLM</b>
-                    <span>
-                      Reports separate Vulnerability and Malicious-pattern ratings (Safe to Critical)
-                      alongside a plain-English summary written by a local LLM.
-                    </span>
-                  </div>
-                </li>
-              </ol>
-
-              <div style={{ marginTop: "1.75rem", display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-                <a
-                  href={MALDET_SCAN_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-ribbon btn-pill"
-                >
-                  Start a live scan
-                </a>
-                <button
-                  type="button"
-                  onClick={() => onNavigate("documentation")}
-                  className="btn btn-ghost-light btn-pill"
-                >
-                  See tools &amp; UI <i className="bi bi-arrow-right ms-1" aria-hidden="true" />
-                </button>
-              </div>
+              ))}
+            </ol>
+            <div style={{ marginTop: "1.75rem", paddingTop: "1.25rem", borderTop: "1px solid var(--forest-line)" }}>
+              <button
+                type="button"
+                onClick={() => onNavigate("documentation")}
+                className="btn btn-ribbon btn-pill"
+                style={{ width: "100%" }}
+              >
+                Explore all 8 engines &amp; UI showcase →
+              </button>
             </div>
           </div>
         </div>
@@ -746,79 +787,101 @@ function OverviewPage({ onNavigate }: { onNavigate: (page: Page) => void }) {
 }
 
 /* ============================================================
-   PAGE 2: HOW IT WORKS, TOOLS & UI (Exact MalDet #tools, #scan, /detail/201, #history)
+   PAGE 2: HOW IT WORKS & TOOLS (Pipeline, 8 Tools, and Live UI Showcase)
    ============================================================ */
-function HowItWorksPage() {
-  const [repoUrl, setRepoUrl] = useState("")
-  const [archivePassword, setArchivePassword] = useState("infected")
-  const [urlError, setUrlError] = useState<string | null>(null)
-
-  const [sevFilter, setSevFilter] = useState<"all" | "high" | "medium" | "low">("all")
-  const [toolFilter, setToolFilter] = useState<string>("all")
-  const [searchQuery, setSearchQuery] = useState<string>("")
+function HowItWorksPage({ onNavigate }: { onNavigate: (page: Page) => void }) {
+  const [sevFilter, setSevFilter] = useState<"ALL" | "HIGH" | "MEDIUM" | "LOW">("ALL")
   const [hideNoise, setHideNoise] = useState<boolean>(false)
-  const [openEventIds, setOpenEventIds] = useState<Record<string, boolean>>({ "ev-1": true })
+  const [repoInput, setRepoInput] = useState<string>("https://github.com/Skidotus/maldet")
 
-  const toggleEvent = (id: string) => {
-    setOpenEventIds((prev) => ({ ...prev, [id]: !prev[id] }))
-  }
-
-  const handleScanFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const v = repoUrl
-      .trim()
-      .replace(/^https?:\/\//, "")
-      .replace(/^(www\.)?github\.com\//, "")
-      .replace(/\/+$/, "")
-    if (!v) {
-      setUrlError("Enter a GitHub repository URL.")
-      return
-    }
-    if (v.split("/").length < 2 || !v.split("/")[1]) {
-      setUrlError("That does not look like a repository. Example: https://github.com/owner/repo")
-      return
-    }
-    setUrlError(null)
-    window.open(MALDET_SCAN_URL, "_blank", "noopener,noreferrer")
-  }
-
-  const filteredEvents = REPORT_201_EVENTS.filter((ev) => {
-    if (sevFilter !== "all" && ev.sev !== sevFilter) return false
-    if (toolFilter !== "all" && ev.toolKey !== toolFilter) return false
-    if (hideNoise && ev.isNoise) return false
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase()
-      if (!ev.text.toLowerCase().includes(q) && !ev.loc.toLowerCase().includes(q)) {
-        return false
-      }
-    }
+  const filteredFindings = SIEM_FINDINGS.filter((item) => {
+    if (sevFilter !== "ALL" && item.severity !== sevFilter) return false
+    if (hideNoise && item.triageLabel === "Likely noise") return false
     return true
   })
 
+  const handleScanSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    window.open(MALDET_SCAN_URL, "_blank", "noopener,noreferrer")
+  }
+
   return (
     <>
-      {/* 1. Exact MalDet #tools Section */}
-      <section className="section section--white" id="tools" aria-labelledby="toolsTitle">
+      {/* Compact Forest Hero */}
+      <section className="hero hero--compact">
+        <div className="site-container hero__grid">
+          <div className="hero__copy">
+            <p className="eyebrow eyebrow--on-dark hero__eyebrow">
+              <span className="live-dot" aria-hidden="true" />
+              Architecture · Detection Engines · User Interface
+            </p>
+            <h1 className="hero__title">
+              Under the hood of <em>MalDet</em>.
+            </h1>
+            <p className="hero__lede">
+              Explore the <strong>eight detection and triage tools</strong> powering every scan, walk
+              through the 5‑stage analysis pipeline, and test the live MalDet user interfaces — from
+              the dark SIEM report console to the repository scan ledger.
+            </p>
+            <div className="hero__actions">
+              <a
+                href={MALDET_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-ribbon btn-lg-pill"
+              >
+                Open Live MalDet Scanner ↗
+              </a>
+              <a
+                href={MALDET_REPORT_201_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-ghost-light btn-lg-pill"
+              >
+                View Live Report #201 ↗
+              </a>
+            </div>
+          </div>
+
+          {/* Pipeline Summary Card in Hero */}
+          <div className="pipeline-card" style={{ border: "1px solid var(--forest-line)" }}>
+            <p className="eyebrow eyebrow--on-dark">End-to-end execution</p>
+            <h3 className="pipeline-card__title">5‑Stage Static &amp; ML Pipeline</h3>
+            <ol className="pipeline">
+              {PIPELINE_STEPS.map((step) => (
+                <li key={step.n}>
+                  <span className="pipeline__n">{step.n}</span>
+                  <div>
+                    <b>{step.title}</b>
+                    <span>{step.body}</span>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      {/* The 8 Detection & Triage Tools Grid */}
+      <section className="section section--white">
         <div className="site-container">
-          <div className="section-head">
+          <div className="section-head section-head--center">
             <p className="eyebrow">Under the hood</p>
-            <h2 className="section-title" id="toolsTitle">
-              The tools <em>behind the verdict</em>
-            </h2>
+            <h2 className="section-title">The tools behind the verdict</h2>
             <p className="section-lede">
-              Established open-source security tools, each looking for something different, plus two
-              components built for this project.
+              MalDet orchestrates established open‑source security engines and feeds their normalized
+              output into a custom machine‑learning triage layer.
             </p>
           </div>
 
           <div className="tool-grid">
-            {TOOLS_DATA.map((tool) => (
+            {TOOLS_LIST.map((tool) => (
               <article key={tool.name} className="tool-card">
-                <div className="tool-card__icon">
-                  <i className={`bi ${tool.icon}`} aria-hidden="true" />
+                <div className="tool-card__top">
+                  <span className="tool-card__icon">{tool.code}</span>
+                  <span className={`axis-tag ${tool.axisClass}`}>{tool.axis}</span>
                 </div>
                 <h3 className="tool-card__name">{tool.name}</h3>
-                <span className={`axis-tag ${tool.axisClass}`}>{tool.axis}</span>
                 <p>{tool.desc}</p>
               </article>
             ))}
@@ -826,679 +889,475 @@ function HowItWorksPage() {
         </div>
       </section>
 
-      {/* 2. Exact MalDet #scan Section (Interactive Scanner UI) */}
-      <section className="section section--paper" id="scan" aria-labelledby="scanTitle">
-        <div className="site-container">
-          <div className="scan-panel">
-            <div className="scan-panel__copy">
-              <p className="eyebrow eyebrow--on-dark">Start here</p>
-              <h2 className="section-title section-title--on-dark" id="scanTitle">
-                Scan a repository
-              </h2>
-              <p>
-                Paste a public GitHub link. Scans run one at a time on the server and usually take a
-                few minutes. It is safe to close the tab and come back.
-              </p>
-              <ul className="scan-panel__points">
-                <li>
-                  <i className="bi bi-check2" aria-hidden="true" />
-                  Public repositories only
-                </li>
-                <li>
-                  <i className="bi bi-check2" aria-hidden="true" />
-                  Nothing from the repository is executed
-                </li>
-                <li>
-                  <i className="bi bi-check2" aria-hidden="true" />
-                  Results are saved to the history below
-                </li>
-              </ul>
-            </div>
-
-            <div className="scan-panel__form">
-              <form onSubmit={handleScanFormSubmit} noValidate>
-                <label htmlFor="repo_url" className="form-label-ledger form-label-ledger--on-dark">
-                  Repository URL
-                </label>
-                <div className="url-field">
-                  <i className="bi bi-github url-field__icon" aria-hidden="true" />
-                  <input
-                    type="text"
-                    className="url-field__input"
-                    id="repo_url"
-                    name="repo_url"
-                    value={repoUrl}
-                    onChange={(e) => {
-                      setRepoUrl(e.target.value)
-                      if (urlError) setUrlError(null)
-                    }}
-                    placeholder="https://github.com/owner/repo"
-                    required
-                    aria-invalid={urlError ? "true" : undefined}
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
-                </div>
-                <p className="form-hint" id="repoUrlHelp">
-                  A full GitHub URL or the short form <code>owner/repo</code>.
-                </p>
-                {urlError && (
-                  <p className="form-error" role="alert">
-                    {urlError}
-                  </p>
-                )}
-
-                <details className="advanced">
-                  <summary>Advanced options</summary>
-                  <label
-                    htmlFor="archive_password"
-                    className="form-label-ledger form-label-ledger--on-dark mt-3"
-                  >
-                    Archive password
-                  </label>
-                  <input
-                    type="text"
-                    className="url-field__input url-field__input--plain"
-                    id="archive_password"
-                    name="archive_password"
-                    value={archivePassword}
-                    onChange={(e) => setArchivePassword(e.target.value)}
-                  />
-                  <p className="form-hint" id="archiveHelp">
-                    Used to open password-protected .zip, .7z and .rar files found in the
-                    repository. <code>infected</code> is the usual convention for malware samples.
-                  </p>
-                </details>
-
-                <button type="submit" className="btn btn-ribbon btn-pill btn-lg-pill w-100 mt-3">
-                  <i className="bi bi-search me-2" aria-hidden="true" />
-                  Run scan
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. Exact MalDet Report Console UI (/detail/201 SIEM-style dark console) */}
-      <section className="console-page" aria-labelledby="consoleReportTitle">
-        <div className="site-container">
-          <nav className="crumbs" aria-label="Breadcrumb">
-            <a href={MALDET_HISTORY_URL} target="_blank" rel="noopener noreferrer">
-              Scan history
-            </a>
-            <i className="bi bi-chevron-right" aria-hidden="true" />
-            <span>Skidotus</span>
-            <i className="bi bi-chevron-right" aria-hidden="true" />
-            <span aria-current="page">maldet</span>
-          </nav>
-
-          <header className="case-header">
-            <div className="case-header__main">
-              <p className="case-header__eyebrow">
-                <span className="live-dot" aria-hidden="true" />
-                Scan report &middot; User interface preview
-              </p>
-              <h2 className="case-header__title" id="consoleReportTitle">
-                Skidotus / <strong>maldet</strong>
-              </h2>
-              <ul className="meta-chips">
-                <li>
-                  <a
-                    href="https://github.com/Skidotus/maldet"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <i className="bi bi-github" aria-hidden="true" />
-                    View on GitHub
-                  </a>
-                </li>
-                <li>
-                  <i className="bi bi-code-slash" aria-hidden="true" />
-                  Python
-                </li>
-                <li>
-                  <i className="bi bi-star" aria-hidden="true" />1 stars
-                </li>
-                <li>
-                  <i className="bi bi-clock-history" aria-hidden="true" />
-                  Scanned 25 Oct 2026, 17:44
-                </li>
-              </ul>
-            </div>
-            <div className="case-header__actions">
-              <a
-                href="http://103.233.1.97:5000/report/201"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-ribbon btn-pill"
-              >
-                <i className="bi bi-file-earmark-text me-1" aria-hidden="true" />
-                Report
-              </a>
-              <a
-                href={MALDET_REPORT_201_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-ribbon btn-pill"
-              >
-                <i className="bi bi-arrow-repeat me-1" aria-hidden="true" />
-                Open Live #201
-              </a>
-            </div>
-          </header>
-
-          {/* Console Verdicts Grid (3 columns) */}
-          <div className="console-grid console-grid--verdicts">
-            <section className="console-panel verdict" aria-label="Vulnerability verdict">
-              <header className="console-panel__head">
-                <span className="console-panel__title">Vulnerability</span>
-                <span className="seal-badge seal-medium">Medium</span>
-              </header>
-              <p className="verdict__question">Could an attacker exploit mistakes in this code?</p>
-              <div className="verdict__score">
-                <span className="verdict__number score-medium">76</span>
-                <span className="verdict__unit">risk score</span>
-              </div>
-              <LevelScale active="Medium" />
-              <p className="verdict__meaning">
-                Real issues worth reviewing before you rely on this code.
-              </p>
-              <dl className="sev-counts">
-                <div>
-                  <dt>
-                    <span className="dot dot--high" />
-                    High
-                  </dt>
-                  <dd>8</dd>
-                </div>
-                <div>
-                  <dt>
-                    <span className="dot dot--medium" />
-                    Medium
-                  </dt>
-                  <dd>12</dd>
-                </div>
-                <div>
-                  <dt>
-                    <span className="dot dot--low" />
-                    Low
-                  </dt>
-                  <dd>25</dd>
-                </div>
-              </dl>
-              <p className="console-panel__foot">Sources: Bandit, Semgrep, pip-audit</p>
-            </section>
-
-            <section className="console-panel verdict" aria-label="Malicious pattern verdict">
-              <header className="console-panel__head">
-                <span className="console-panel__title">Malicious pattern</span>
-                <span className="seal-badge seal-medium">Medium</span>
-              </header>
-              <p className="verdict__question">
-                Does this code look like it is trying to cause harm?
-              </p>
-              <div className="verdict__score">
-                <span className="verdict__number score-medium">17</span>
-                <span className="verdict__unit">risk score</span>
-              </div>
-              <LevelScale active="Medium" />
-              <p className="verdict__meaning">
-                Real issues worth reviewing before you rely on this code.
-              </p>
-              <dl className="sev-counts">
-                <div>
-                  <dt>
-                    <span className="dot dot--high" />
-                    High
-                  </dt>
-                  <dd>16</dd>
-                </div>
-                <div>
-                  <dt>
-                    <span className="dot dot--medium" />
-                    Medium
-                  </dt>
-                  <dd>0</dd>
-                </div>
-                <div>
-                  <dt>
-                    <span className="dot dot--low" />
-                    Low
-                  </dt>
-                  <dd>6</dd>
-                </div>
-              </dl>
-              <p className="console-panel__foot">
-                Sources: YARA, ClamAV, GuardDog, dependency checker
-              </p>
-            </section>
-
-            <section className="console-panel" aria-label="Findings overview">
-              <header className="console-panel__head">
-                <span className="console-panel__title">Findings overview</span>
-              </header>
-              <div className="verdict__score">
-                <span className="verdict__number">67</span>
-                <span className="verdict__unit">total findings</span>
-              </div>
-              <div
-                className="stack-bar"
-                role="img"
-                aria-label="16 likely real, 12 uncertain, 39 likely noise"
-              >
-                <span className="stack-bar__seg stack-bar__seg--real" style={{ width: "23.9%" }} />
-                <span
-                  className="stack-bar__seg stack-bar__seg--unsure"
-                  style={{ width: "17.9%" }}
-                />
-                <span className="stack-bar__seg stack-bar__seg--noise" style={{ width: "58.2%" }} />
-              </div>
-              <dl className="sev-counts sev-counts--stack">
-                <div>
-                  <dt>
-                    <span className="dot dot--real" />
-                    Likely real
-                  </dt>
-                  <dd>16</dd>
-                </div>
-                <div>
-                  <dt>
-                    <span className="dot dot--unsure" />
-                    Uncertain
-                  </dt>
-                  <dd>12</dd>
-                </div>
-                <div>
-                  <dt>
-                    <span className="dot dot--noise" />
-                    Likely noise
-                  </dt>
-                  <dd>39</dd>
-                </div>
-              </dl>
-              <p className="console-panel__foot">
-                The risk classifier rates every finding for how likely it is to be a real issue.
-                Likely noise still counts, just much less.
-              </p>
-            </section>
-          </div>
-
-          {/* Console Insight Grid (3 columns) */}
-          <div className="console-grid console-grid--insight">
-            <section
-              className="console-panel console-panel--summary"
-              aria-labelledby="summaryTitle"
-            >
-              <header className="console-panel__head">
-                <h3 className="console-panel__title" id="summaryTitle">
-                  What we found, in plain English
-                </h3>
-              </header>
-              <p className="findings-summary">
-                16 findings likely need attention, 39 look like noise. Most notable: CVE found:
-                CVE-2026-59951 in mcp==1.29.0 — In affected versions, a Streamable HTTP session
-                handling issue in requirements.txt (99% confidence), alongside raw SQL string
-                concatenation in <code>/backfill_summaries.py</code>.
-              </p>
-            </section>
-
-            <section className="console-panel" aria-labelledby="enginesTitle">
-              <header className="console-panel__head">
-                <h3 className="console-panel__title" id="enginesTitle">
-                  Detections by engine
-                </h3>
-              </header>
-              <ul className="engine-bars">
-                <li>
-                  <div className="engine-bars__label">
-                    <span>Bandit</span>
-                    <span className="engine-bars__n">32</span>
-                  </div>
-                  <div className="engine-bars__track">
-                    <span style={{ width: "100.0%" }} />
-                  </div>
-                  <p className="engine-bars__hint">Python security linter &middot; Vulnerability</p>
-                </li>
-                <li>
-                  <div className="engine-bars__label">
-                    <span>YARA</span>
-                    <span className="engine-bars__n">22</span>
-                  </div>
-                  <div className="engine-bars__track">
-                    <span style={{ width: "68.8%" }} />
-                  </div>
-                  <p className="engine-bars__hint">
-                    Malware signature rules &middot; Malicious pattern
-                  </p>
-                </li>
-                <li>
-                  <div className="engine-bars__label">
-                    <span>Semgrep</span>
-                    <span className="engine-bars__n">11</span>
-                  </div>
-                  <div className="engine-bars__track">
-                    <span style={{ width: "34.4%" }} />
-                  </div>
-                  <p className="engine-bars__hint">
-                    Pattern-based code analysis &middot; Vulnerability
-                  </p>
-                </li>
-                <li>
-                  <div className="engine-bars__label">
-                    <span>Dependency checker</span>
-                    <span className="engine-bars__n">2</span>
-                  </div>
-                  <div className="engine-bars__track">
-                    <span style={{ width: "6.2%" }} />
-                  </div>
-                  <p className="engine-bars__hint">
-                    CVEs, typosquats and risky installs &middot; Supply chain
-                  </p>
-                </li>
-              </ul>
-            </section>
-
-            <section className="console-panel" aria-labelledby="trendTitle">
-              <header className="console-panel__head">
-                <h3 className="console-panel__title" id="trendTitle">
-                  Score over time
-                </h3>
-              </header>
-              <div className="trend-wrap">
-                <svg
-                  viewBox="0 0 280 150"
-                  width="100%"
-                  height="150"
-                  role="img"
-                  aria-label="Overall risk score for each scan of this repository"
-                >
-                  <line
-                    x1="28"
-                    y1="25"
-                    x2="265"
-                    y2="25"
-                    stroke="rgba(241,240,232,0.08)"
-                    strokeDasharray="3 3"
-                  />
-                  <line
-                    x1="28"
-                    y1="75"
-                    x2="265"
-                    y2="75"
-                    stroke="rgba(241,240,232,0.08)"
-                    strokeDasharray="3 3"
-                  />
-                  <line
-                    x1="28"
-                    y1="125"
-                    x2="265"
-                    y2="125"
-                    stroke="rgba(241,240,232,0.08)"
-                  />
-                  <text x="4" y="29" fill="#9fb0a5" fontSize="10" fontFamily="IBM Plex Mono">
-                    100
-                  </text>
-                  <text x="10" y="79" fill="#9fb0a5" fontSize="10" fontFamily="IBM Plex Mono">
-                    50
-                  </text>
-                  <text x="16" y="129" fill="#9fb0a5" fontSize="10" fontFamily="IBM Plex Mono">
-                    0
-                  </text>
-                  <polyline
-                    fill="none"
-                    stroke="#a3d9b8"
-                    strokeWidth="2.5"
-                    points="50,62 115,54 185,48 245,49"
-                  />
-                  <circle cx="50" cy="62" r="4" fill="#a3d9b8" />
-                  <circle cx="115" cy="54" r="4" fill="#a3d9b8" />
-                  <circle cx="185" cy="48" r="4" fill="#a3d9b8" />
-                  <circle cx="245" cy="49" r="5" fill="#e8b84a" />
-                </svg>
-              </div>
-              <p className="console-panel__foot">
-                Overall score each time this repository was scanned.
-              </p>
-            </section>
-          </div>
-
-          {/* Interactive Findings Event Log */}
-          <section className="console-panel console-panel--events" aria-labelledby="eventsTitle">
-            <header className="events-head">
-              <div>
-                <h3 className="console-panel__title" id="eventsTitle">
-                  Findings
-                </h3>
-                <p className="events-head__hint">
-                  Highest severity first. Select a finding to see the code and what it means.
-                </p>
-              </div>
-              <p className="events-count">
-                Showing {filteredEvents.length} of {REPORT_201_EVENTS.length} sample findings (67 in
-                full report)
-              </p>
-            </header>
-
-            <div className="events-toolbar" role="search" aria-label="Filter findings">
-              <label className="events-search">
-                <i className="bi bi-search" aria-hidden="true" />
-                <span className="visually-hidden">Search findings</span>
-                <input
-                  type="search"
-                  placeholder="Search description or file…"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  autoComplete="off"
-                />
-              </label>
-
-              <div className="seg" role="group" aria-label="Severity">
-                <button
-                  type="button"
-                  className={`seg__btn${sevFilter === "all" ? " is-on" : ""}`}
-                  onClick={() => setSevFilter("all")}
-                >
-                  All <span>67</span>
-                </button>
-                <button
-                  type="button"
-                  className={`seg__btn${sevFilter === "high" ? " is-on" : ""}`}
-                  onClick={() => setSevFilter("high")}
-                >
-                  <span className="dot dot--high" />
-                  High <span>24</span>
-                </button>
-                <button
-                  type="button"
-                  className={`seg__btn${sevFilter === "medium" ? " is-on" : ""}`}
-                  onClick={() => setSevFilter("medium")}
-                >
-                  <span className="dot dot--medium" />
-                  Medium <span>12</span>
-                </button>
-                <button
-                  type="button"
-                  className={`seg__btn${sevFilter === "low" ? " is-on" : ""}`}
-                  onClick={() => setSevFilter("low")}
-                >
-                  <span className="dot dot--low" />
-                  Low <span>31</span>
-                </button>
-              </div>
-
-              <label className="events-select">
-                <span className="visually-hidden">Engine</span>
-                <select value={toolFilter} onChange={(e) => setToolFilter(e.target.value)}>
-                  <option value="all">All engines (4)</option>
-                  <option value="bandit">Bandit (32)</option>
-                  <option value="yara">YARA (22)</option>
-                  <option value="semgrep">Semgrep (11)</option>
-                  <option value="dependency_checker">Dependency checker (2)</option>
-                </select>
-              </label>
-
-              <button
-                type="button"
-                className="toggle-chip"
-                aria-pressed={hideNoise}
-                onClick={() => setHideNoise((prev) => !prev)}
-              >
-                <i className="bi bi-eye-slash" aria-hidden="true" />
-                Hide likely noise <span>(39)</span>
-              </button>
-            </div>
-
-            <div className="events-cols" aria-hidden="true">
-              <span>Severity</span>
-              <span>Engine</span>
-              <span>Finding</span>
-              <span>Location</span>
-              <span>Confidence</span>
-              <span />
-            </div>
-
-            <ol className="event-list">
-              {filteredEvents.map((ev) => {
-                const isOpen = !!openEventIds[ev.id]
-                return (
-                  <li
-                    key={ev.id}
-                    className={`event${ev.isNoise ? " event--noise" : ""}${
-                      isOpen ? " is-open" : ""
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      className="event__row"
-                      aria-expanded={isOpen}
-                      onClick={() => toggleEvent(ev.id)}
-                    >
-                      <span className="event__sev">
-                        <span className={`seal-badge seal-${ev.sev}`}>{ev.sev}</span>
-                      </span>
-                      <span className="event__tool">{ev.tool}</span>
-                      <span className="event__text">{ev.text}</span>
-                      <span className="event__loc">{ev.loc}</span>
-                      <span className="event__conf">
-                        <span className="conf-bar" aria-hidden="true">
-                          <i style={{ width: `${ev.conf}%` }} />
-                        </span>
-                        <span>{ev.conf}%</span>
-                      </span>
-                      <i className="bi bi-chevron-down event__chev" aria-hidden="true" />
-                    </button>
-
-                    {isOpen && (
-                      <div className="event__detail">
-                        <dl className="event__facts">
-                          <div>
-                            <dt>Axis</dt>
-                            <dd>{ev.axis}</dd>
-                          </div>
-                          <div>
-                            <dt>File</dt>
-                            <dd className="mono">{ev.loc}</dd>
-                          </div>
-                          <div>
-                            <dt>Classifier confidence</dt>
-                            <dd>
-                              {ev.conf}% ({ev.isNoise ? "likely noise" : "likely real"})
-                            </dd>
-                          </div>
-                        </dl>
-                        <p className="event__full">{ev.text}</p>
-                        <pre className="code-snippet">
-                          <code>{ev.snippet}</code>
-                        </pre>
-                      </div>
-                    )}
-                  </li>
-                )
-              })}
-            </ol>
-          </section>
-        </div>
-      </section>
-
-      {/* 4. Exact MalDet #history Section */}
-      <section className="section section--white" id="history" aria-labelledby="historyTitle">
+      {/* User Interface Showcase 1: Interactive Dark SIEM Report Console */}
+      <section className="section section--paper">
         <div className="site-container">
           <div className="section-head section-head--row">
             <div>
-              <p className="eyebrow">Scan history</p>
-              <h2 className="section-title" id="historyTitle">
-                Recently <em>scanned</em>
+              <p className="eyebrow">User Interface 01 · Report Detail Console</p>
+              <h2 className="section-title">
+                Interactive SIEM report console <em>(/detail/201)</em>
               </h2>
-              <p className="section-lede mb-0">The ten most recent repositories, newest first.</p>
+              <p className="section-lede">
+                When a scan finishes, MalDet presents a dark forest SIEM console separating
+                Vulnerability and Malicious‑pattern verdicts, ML triage distribution, local Ollama
+                LLM narrative, engine breakdown bars, and filterable finding rows.
+              </p>
+            </div>
+            <a
+              href={MALDET_REPORT_201_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-ribbon btn-pill"
+            >
+              Open Live Report #201 ↗
+            </a>
+          </div>
+
+          <div className="siem-console-shell">
+            {/* SIEM Console Header */}
+            <header className="siem-header">
+              <div>
+                <p className="eyebrow eyebrow--on-dark" style={{ marginBottom: "0.2rem" }}>
+                  Scan report #201
+                </p>
+                <h3 className="siem-title">
+                  Skidotus / <strong>maldet</strong>
+                </h3>
+                <ul className="meta-chips">
+                  <li>Language · HTML</li>
+                  <li>0 stars</li>
+                  <li>0 forks</li>
+                  <li>Scanned 25 Oct 2026, 15:23</li>
+                </ul>
+              </div>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                <a
+                  href="https://github.com/Skidotus/maldet"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-ghost-light btn-sm-pill"
+                >
+                  GitHub ↗
+                </a>
+                <a
+                  href={MALDET_REPORT_201_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-ribbon btn-sm-pill"
+                >
+                  View on MalDet Server ↗
+                </a>
+              </div>
+            </header>
+
+            {/* Row 1: Dual Verdicts + ML Triage Overview */}
+            <div className="console-grid console-grid--verdicts">
+              {/* Vulnerability Verdict Panel */}
+              <article className="console-panel">
+                <header className="console-panel__head">
+                  <span className="console-panel__title">Vulnerability verdict</span>
+                  <RiskSeal level="Medium" />
+                </header>
+                <p className="verdict__question">Does this repository contain security bugs?</p>
+                <div className="verdict__score">
+                  <span className="verdict__number">76</span>
+                  <span className="verdict__unit">score · raw 159.4</span>
+                </div>
+                <LevelScale active="Medium" />
+                <p className="console-panel__foot">Engines · Bandit, Semgrep, pip‑audit</p>
+              </article>
+
+              {/* Malicious Pattern Verdict Panel */}
+              <article className="console-panel">
+                <header className="console-panel__head">
+                  <span className="console-panel__title">Malicious‑pattern verdict</span>
+                  <RiskSeal level="Medium" />
+                </header>
+                <p className="verdict__question">Does this repository look intentionally harmful?</p>
+                <div className="verdict__score">
+                  <span className="verdict__number">17</span>
+                  <span className="verdict__unit">score · raw 159.4</span>
+                </div>
+                <LevelScale active="Medium" />
+                <p className="console-panel__foot">
+                  Engines · YARA, ClamAV, GuardDog, Dependency checker
+                </p>
+              </article>
+
+              {/* Findings Overview + ML Stack Bar */}
+              <article className="console-panel">
+                <header className="console-panel__head">
+                  <span className="console-panel__title">Findings overview</span>
+                  <span className="font-mono" style={{ fontSize: "0.78rem", color: "#9fb0a5" }}>
+                    67 total
+                  </span>
+                </header>
+
+                <dl className="sev-counts">
+                  <div>
+                    <dt>
+                      <span className="dot dot--high" />
+                      High
+                    </dt>
+                    <dd>24</dd>
+                  </div>
+                  <div>
+                    <dt>
+                      <span className="dot dot--medium" />
+                      Medium
+                    </dt>
+                    <dd>12</dd>
+                  </div>
+                  <div>
+                    <dt>
+                      <span className="dot dot--low" />
+                      Low
+                    </dt>
+                    <dd>31</dd>
+                  </div>
+                </dl>
+
+                <div style={{ marginTop: "0.95rem" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      fontSize: "0.75rem",
+                      color: "#9fb0a5",
+                      marginBottom: "0.35rem"
+                    }}
+                  >
+                    <span>ML triage split</span>
+                    <span className="font-mono">16 real · 12 unsure · 39 noise</span>
+                  </div>
+                  <div className="stack-bar" role="img" aria-label="ML triage breakdown">
+                    <span className="stack-bar__seg--real" style={{ width: "23.9%" }} />
+                    <span className="stack-bar__seg--unsure" style={{ width: "17.9%" }} />
+                    <span className="stack-bar__seg--noise" style={{ width: "58.2%" }} />
+                  </div>
+                </div>
+                <p className="console-panel__foot">
+                  Random Forest down‑ranks 39 low‑confidence test/fixture alerts
+                </p>
+              </article>
             </div>
 
+            {/* Row 2: Plain-English Summary + Detections by Engine */}
+            <div className="console-grid console-grid--insight">
+              <article className="console-panel">
+                <header className="console-panel__head">
+                  <span className="console-panel__title">Plain‑English summary</span>
+                  <span className="seal-badge seal-low" style={{ textTransform: "none" }}>
+                    Local Ollama LLM
+                  </span>
+                </header>
+                <div className="llm-summary-box">
+                  This repository was rated <strong>Medium</strong> for code vulnerabilities (score
+                  76) and <strong>Medium</strong> for malicious patterns (score 17). Out of{" "}
+                  <strong>67</strong> raw detections across Bandit, YARA, Semgrep, and Dependency
+                  checker, the Random Forest classifier identified <strong>16 likely real</strong>{" "}
+                  findings (primarily outdated pinned packages in{" "}
+                  <code>requirements.txt</code> and SQL query string formatting) while filtering{" "}
+                  <strong>39 likely noise</strong> alerts triggered by YARA rules and test fixtures.
+                </div>
+              </article>
+
+              <article className="console-panel">
+                <header className="console-panel__head">
+                  <span className="console-panel__title">Detections by engine</span>
+                  <span className="font-mono" style={{ fontSize: "0.76rem", color: "#9fb0a5" }}>
+                    4 active engines
+                  </span>
+                </header>
+                <ul className="engine-bars">
+                  <li>
+                    <div className="engine-bars__label">
+                      <span>Bandit</span>
+                      <span className="engine-bars__n">32</span>
+                    </div>
+                    <div className="engine-bars__track">
+                      <span style={{ width: "47.8%" }} />
+                    </div>
+                  </li>
+                  <li>
+                    <div className="engine-bars__label">
+                      <span>YARA</span>
+                      <span className="engine-bars__n">22</span>
+                    </div>
+                    <div className="engine-bars__track">
+                      <span style={{ width: "32.8%" }} />
+                    </div>
+                  </li>
+                  <li>
+                    <div className="engine-bars__label">
+                      <span>Semgrep</span>
+                      <span className="engine-bars__n">11</span>
+                    </div>
+                    <div className="engine-bars__track">
+                      <span style={{ width: "16.4%" }} />
+                    </div>
+                  </li>
+                  <li>
+                    <div className="engine-bars__label">
+                      <span>Dependency checker</span>
+                      <span className="engine-bars__n">2</span>
+                    </div>
+                    <div className="engine-bars__track">
+                      <span style={{ width: "6%" }} />
+                    </div>
+                  </li>
+                </ul>
+              </article>
+            </div>
+
+            {/* Row 3: Interactive Filterable Findings Stream */}
+            <div className="siem-events-panel">
+              <div className="siem-events-toolbar">
+                <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+                  <span className="console-panel__title">Findings stream (sample from #201)</span>
+                  <span className="font-mono" style={{ fontSize: "0.76rem", color: "#9fb0a5" }}>
+                    Showing {filteredFindings.length} of {SIEM_FINDINGS.length} preview rows
+                  </span>
+                </div>
+
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.65rem", alignItems: "center" }}>
+                  <div className="seg" role="group" aria-label="Filter by severity">
+                    {(["ALL", "HIGH", "MEDIUM", "LOW"] as const).map((sev) => (
+                      <button
+                        key={sev}
+                        type="button"
+                        onClick={() => setSevFilter(sev)}
+                        className={`seg__btn${sevFilter === sev ? " is-on" : ""}`}
+                      >
+                        {sev !== "ALL" && (
+                          <span className={`dot dot--${sev.toLowerCase()}`} />
+                        )}
+                        {sev === "ALL" ? "All" : sev.charAt(0) + sev.slice(1).toLowerCase()}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setHideNoise((prev) => !prev)}
+                    className={`seg__btn${hideNoise ? " is-on" : ""}`}
+                    style={{
+                      border: "1px solid rgba(241, 240, 232, 0.14)",
+                      borderRadius: "999px"
+                    }}
+                  >
+                    {hideNoise ? "✓ Hiding likely noise" : "Hide likely noise"}
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                {filteredFindings.map((f) => (
+                  <div key={f.id} className="siem-event-row">
+                    <div>
+                      <RiskSeal level={f.sealLevel} />
+                    </div>
+                    <div>
+                      <strong style={{ display: "block", color: "#eef0e8" }}>{f.engine}</strong>
+                      <span style={{ fontSize: "0.75rem", color: "#9fb0a5" }}>{f.category}</span>
+                    </div>
+                    <div>
+                      <div style={{ color: "#eef0e8", marginBottom: "0.2rem" }}>
+                        {f.description}
+                      </div>
+                      <code
+                        style={{
+                          background: "rgba(0,0,0,0.3)",
+                          color: "var(--green-glow)",
+                          fontSize: "0.76rem"
+                        }}
+                      >
+                        {f.location}
+                      </code>
+                    </div>
+                    <div>
+                      <span
+                        className="axis-tag"
+                        style={{
+                          background:
+                            f.triageLabel === "Likely real"
+                              ? "rgba(163, 217, 184, 0.16)"
+                              : f.triageLabel === "Uncertain"
+                                ? "rgba(232, 184, 74, 0.14)"
+                                : "rgba(255, 255, 255, 0.06)",
+                          color:
+                            f.triageLabel === "Likely real"
+                              ? "var(--green-glow)"
+                              : f.triageLabel === "Uncertain"
+                                ? "var(--medium)"
+                                : "#9fb0a5",
+                          borderColor: "rgba(241, 240, 232, 0.12)"
+                        }}
+                      >
+                        {f.triageLabel}
+                      </span>
+                    </div>
+                    <div className="font-mono" style={{ fontSize: "0.78rem", color: "#eef0e8" }}>
+                      <span className="conf-bar">
+                        <i style={{ width: `${f.confidence}%` }} />
+                      </span>
+                      {f.confidence}%
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* User Interface Showcase 2: Authentic MalDet Repository Scan Panel */}
+      <section className="section section--white">
+        <div className="site-container">
+          <div className="section-head">
+            <p className="eyebrow">User Interface 02 · One‑Click Scanner Panel</p>
+            <h2 className="section-title">
+              Check any public GitHub repository <em>(#scan)</em>
+            </h2>
+            <p className="section-lede">
+              The live MalDet scanner requires zero configuration. Users paste a repository URL and
+              MalDet unpacks a shallow archive, executes all engines, and builds the dual‑axis
+              report.
+            </p>
+          </div>
+
+          <div className="scan-panel">
+            <div className="scan-panel__copy">
+              <p className="eyebrow eyebrow--on-dark">Try it now</p>
+              <h3 className="section-title section-title--on-dark">
+                Check a public GitHub repository
+              </h3>
+              <p>
+                Paste any repository URL below. MalDet will unpack a shallow snapshot, run every
+                detection engine, filter false positives with the Random Forest model, and build a
+                full report.
+              </p>
+              <ul className="scan-panel__points">
+                <li>
+                  <span className="scan-panel__check">✓</span> No account or API key required
+                </li>
+                <li>
+                  <span className="scan-panel__check">✓</span> Separate Vulnerability &amp;
+                  Malicious‑pattern verdicts
+                </li>
+                <li>
+                  <span className="scan-panel__check">✓</span> Full finding breakdown with file
+                  locations and ML confidence
+                </li>
+              </ul>
+            </div>
+
+            <form onSubmit={handleScanSubmit} className="scan-panel__form">
+              <label htmlFor="demo_repo_url" className="form-label-ledger">
+                GitHub repository URL
+              </label>
+              <div className="url-field">
+                <span className="url-field__icon" aria-hidden="true">
+                  ⌘
+                </span>
+                <input
+                  type="url"
+                  id="demo_repo_url"
+                  value={repoInput}
+                  onChange={(e) => setRepoInput(e.target.value)}
+                  className="url-field__input"
+                  placeholder="https://github.com/owner/repository"
+                  required
+                />
+              </div>
+              <p className="form-hint">
+                Example: <code>https://github.com/pallets/flask</code> or{" "}
+                <code>https://github.com/Skidotus/maldet</code>
+              </p>
+              <button
+                type="submit"
+                className="btn btn-ribbon btn-lg-pill"
+                style={{ width: "100%", marginTop: "1rem" }}
+              >
+                Launch Scan on Live MalDet Server ↗
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      {/* User Interface Showcase 3: Scan History Ledger Book */}
+      <section className="section section--paper">
+        <div className="site-container">
+          <div className="section-head section-head--row">
+            <div>
+              <p className="eyebrow">User Interface 03 · Audit Trail Ledger</p>
+              <h2 className="section-title">Recently scanned repositories</h2>
+              <p className="section-lede">
+                Every scan is archived in the warm‑ivory paper ledger book with its primary
+                language, dual risk seals, numerical scores, and one‑click access to the full SIEM
+                report.
+              </p>
+            </div>
             <a
               href={MALDET_HISTORY_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-outline-parchment btn-pill"
             >
-              View all 181 scans <i className="bi bi-arrow-right ms-1" aria-hidden="true" />
+              View all 181 scans ↗
             </a>
           </div>
 
           <div className="ledger-book">
             <div className="table-responsive">
-              <table className="table table-ledger table-stack align-middle mb-0">
+              <table className="table-ledger">
                 <thead>
                   <tr>
-                    <th scope="col">Repository</th>
-                    <th scope="col">Language</th>
-                    <th scope="col">Vulnerability</th>
-                    <th scope="col">Malicious pattern</th>
-                    <th scope="col">Scanned</th>
-                    <th scope="col">
-                      <span className="visually-hidden">Report</span>
-                    </th>
+                    <th>Repository</th>
+                    <th>Language</th>
+                    <th>Vulnerability</th>
+                    <th>Malicious pattern</th>
+                    <th>Scanned</th>
+                    <th style={{ textAlign: "right" }}>Report</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {RECENT_SCANS.map((row) => (
+                  {RECENT_SCANS_LEDGER.map((row) => (
                     <tr key={row.id}>
-                      <td className="td-full">
-                        <span className="repo-name">{row.name}</span>
-                        <span className="repo-owner d-block">
-                          {row.owner} &middot; <i className="bi bi-star-fill" aria-hidden="true" />{" "}
-                          {row.stars}
-                        </span>
+                      <td>
+                        <div className="repo-cell">
+                          <span className="repo-name">{row.repo}</span>
+                          <span className="repo-owner">{row.owner}</span>
+                        </div>
                       </td>
-                      <td className="td-hide-sm">{row.lang}</td>
-                      <td data-label="Vulnerability">
-                        <span className="axis-cell">
-                          <span className={`seal-badge seal-${row.vulnLevel.toLowerCase()}`}>
-                            {row.vulnLevel}
-                          </span>
+                      <td style={{ color: "var(--muted)" }}>{row.lang}</td>
+                      <td>
+                        <div className="axis-cell">
+                          <RiskSeal level={row.vulnLevel} />
                           <span className={`score-${row.vulnLevel.toLowerCase()}`}>
                             {row.vulnScore}
                           </span>
-                        </span>
+                        </div>
                       </td>
-                      <td data-label="Malicious pattern">
-                        <span className="axis-cell">
-                          <span className={`seal-badge seal-${row.malLevel.toLowerCase()}`}>
-                            {row.malLevel}
-                          </span>
+                      <td>
+                        <div className="axis-cell">
+                          <RiskSeal level={row.malLevel} />
                           <span className={`score-${row.malLevel.toLowerCase()}`}>
                             {row.malScore}
                           </span>
-                        </span>
+                        </div>
                       </td>
-                      <td className="text-muted text-nowrap td-date">{row.date}</td>
-                      <td className="text-end">
+                      <td style={{ color: "var(--muted)", whiteSpace: "nowrap" }}>{row.date}</td>
+                      <td style={{ textAlign: "right" }}>
                         <a
                           href={`http://103.233.1.97:5000/detail/${row.id}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="btn btn-sm btn-outline-parchment btn-pill row-action"
-                          aria-label={`View report for ${row.owner}/${row.name}`}
+                          className="btn btn-outline-parchment btn-sm-pill"
                         >
-                          View
+                          View ↗
                         </a>
                       </td>
                     </tr>
@@ -1507,6 +1366,32 @@ function HowItWorksPage() {
               </table>
             </div>
           </div>
+
+          <div
+            style={{
+              marginTop: "2rem",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "1rem"
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => onNavigate("about")}
+              className="btn btn-outline-parchment btn-pill"
+            >
+              ← Back to Overview &amp; Problem/Solution
+            </button>
+            <button
+              type="button"
+              onClick={() => onNavigate("contact")}
+              className="btn btn-ribbon btn-pill"
+            >
+              Meet the GMI Project Team →
+            </button>
+          </div>
         </div>
       </section>
 
@@ -1516,192 +1401,514 @@ function HowItWorksPage() {
 }
 
 /* ============================================================
-   PAGE 3: ABOUT US & TEAM (Exact MalDet #about + Live Server Panel + Title Plate)
+   PAGE 3: ABOUT US & TEAM (GMI FYP Story, Team Members, Supervisor & Inquiry)
    ============================================================ */
-function AboutPage() {
+function AboutUsTeamPage() {
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [repoUrl, setRepoUrl] = useState("")
+  const [message, setMessage] = useState("")
+  const [submitted, setSubmitted] = useState(false)
+
+  const handleInquirySubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name.trim() || !email.trim()) return
+    setSubmitted(true)
+  }
+
   return (
     <>
-      {/* Exact MalDet #about Section */}
-      <section className="section section--paper" id="about" aria-labelledby="aboutTitle">
-        <div className="site-container about">
-          <div className="about__copy">
-            <p className="eyebrow">About us</p>
-            <h1 className="section-title" id="aboutTitle">
-              Built as a final year project, <em>made to be used.</em>
+      {/* Compact Forest Hero */}
+      <section className="hero hero--compact">
+        <div className="site-container hero__grid">
+          <div className="hero__copy">
+            <p className="eyebrow eyebrow--on-dark hero__eyebrow">
+              <span className="live-dot" aria-hidden="true" />
+              About Us · German‑Malaysian Institute · 2026
+            </p>
+            <h1 className="hero__title">
+              Built as a final year project, <em>made to be used</em>.
             </h1>
-            <p className="section-lede">
-              MalDet is a Final Year Project for the Diploma in Cyber Security Technology at the
-              German-Malaysian Institute. It started from a simple question: how can a developer
-              tell whether a public repository is safe to pull in without running six security tools
-              and reading thousands of alerts?
+            <p className="hero__lede">
+              MalDet was designed and built by a four‑student Cyber Security Technology team at the{" "}
+              <strong>German‑Malaysian Institute (GMI)</strong> under the supervision of{" "}
+              <strong>Sir Luqman</strong> to make open‑source repository auditing practical,
+              transparent, and fast.
             </p>
-            <p className="section-lede">
-              The answer is to combine the tools, filter out the noise, and keep two kinds of risk
-              separate, because they need different responses.
-            </p>
-
-            <div style={{ marginTop: "2rem", display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+            <div className="hero__actions">
               <a
                 href={MALDET_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn btn-ribbon btn-pill btn-lg-pill"
+                className="btn btn-ribbon btn-lg-pill"
               >
-                Open MalDet Scanner
+                Visit Live MalDet Website ↗
               </a>
               <a
-                href={MALDET_HISTORY_URL}
+                href="https://github.com/Skidotus/maldet"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn btn-outline-parchment btn-pill btn-lg-pill"
+                className="btn btn-ghost-light btn-lg-pill"
               >
-                Browse Scan History <i className="bi bi-arrow-right ms-1" aria-hidden="true" />
+                GitHub Repository ↗
               </a>
             </div>
           </div>
 
+          {/* Academic Credential Card */}
+          <aside className="preview-card" aria-label="Academic project credentials">
+            <div className="preview-card__bar">
+              <span className="preview-card__dots">
+                <i />
+                <i />
+                <i />
+              </span>
+              <span className="preview-card__label">Academic Monograph</span>
+              <span className="preview-card__time">GMI · 2026</span>
+            </div>
+            <div className="preview-card__body">
+              <p className="eyebrow" style={{ marginBottom: "0.35rem" }}>
+                Institution &amp; Programme
+              </p>
+              <h3
+                style={{
+                  fontFamily: "var(--font-display)",
+                  fontSize: "1.4rem",
+                  fontWeight: 400,
+                  margin: "0 0 0.75rem",
+                  color: "var(--ink)"
+                }}
+              >
+                Diploma in Cyber Security Technology
+              </h3>
+              <p style={{ color: "var(--muted)", fontSize: "0.92rem", margin: "0 0 1rem" }}>
+                German‑Malaysian Institute (GMI) · Final Year Project 2026
+              </p>
+              <div className="preview-card__axes">
+                <div className="axis-panel">
+                  <div className="axis-panel__head">
+                    <span>Project Team</span>
+                    <span className="seal-badge seal-safe">4 Students</span>
+                  </div>
+                  <div
+                    style={{
+                      fontWeight: 700,
+                      fontSize: "1.05rem",
+                      marginTop: "0.5rem",
+                      color: "var(--ink)"
+                    }}
+                  >
+                    Haikal, Ariff, Aleena &amp; Adam
+                  </div>
+                </div>
+                <div className="axis-panel">
+                  <div className="axis-panel__head">
+                    <span>Supervisor</span>
+                    <span className="seal-badge seal-low">Advisor</span>
+                  </div>
+                  <div
+                    style={{
+                      fontWeight: 700,
+                      fontSize: "1.05rem",
+                      marginTop: "0.5rem",
+                      color: "var(--ink)"
+                    }}
+                  >
+                    Sir Luqman
+                  </div>
+                </div>
+              </div>
+              <a
+                href={MALDET_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="preview-card__link"
+              >
+                Open live deployment at 103.233.1.97:5000 →
+              </a>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      {/* Authentic MalDet About & Team Split Section */}
+      <section className="section section--white">
+        <div className="site-container about-split">
+          <div className="about-split__story">
+            <p className="eyebrow">About us</p>
+            <h2 className="section-title">
+              Built as a final year project, <em>made to be used</em>.
+            </h2>
+            <p className="section-lede">
+              MalDet is a Final Year Project developed for the{" "}
+              <strong>Diploma in Cyber Security Technology</strong> at the{" "}
+              <strong>German‑Malaysian Institute (GMI)</strong>.
+            </p>
+            <p className="section-lede">
+              Our goal was to turn research on software supply‑chain security and machine‑learning
+              alert triage into a practical tool anyone can run in a browser — whether you are a
+              student checking a project dependency, a lecturer reviewing submissions, or a
+              developer auditing a library before adding it to requirements.
+            </p>
+
+            {/* Key Project Pillars */}
+            <div
+              style={{
+                marginTop: "2rem",
+                display: "grid",
+                gap: "0.85rem"
+              }}
+            >
+              <div className="axis-panel">
+                <div className="axis-panel__head">
+                  <span style={{ color: "var(--green-text)", fontWeight: 700 }}>
+                    01 · Multi‑Engine Static Analysis
+                  </span>
+                  <span className="axis-tag axis-tag--vulnerability">6 Scanners + Typosquat</span>
+                </div>
+                <p style={{ margin: "0.45rem 0 0", fontSize: "0.9rem", color: "var(--muted)" }}>
+                  Unifies Bandit, Semgrep, pip‑audit, YARA, ClamAV, GuardDog, and edit‑distance
+                  dependency checks inside a single sandboxed workflow.
+                </p>
+              </div>
+
+              <div className="axis-panel">
+                <div className="axis-panel__head">
+                  <span style={{ color: "var(--green-text)", fontWeight: 700 }}>
+                    02 · Machine‑Learning Alert Triage
+                  </span>
+                  <span className="axis-tag axis-tag--triage">Scikit‑Learn Random Forest</span>
+                </div>
+                <p style={{ margin: "0.45rem 0 0", fontSize: "0.9rem", color: "var(--muted)" }}>
+                  Trained on 63,496+ real repository findings to separate genuine vulnerabilities
+                  and malware from harmless test‑suite and documentation matches.
+                </p>
+              </div>
+
+              <div className="axis-panel">
+                <div className="axis-panel__head">
+                  <span style={{ color: "var(--green-text)", fontWeight: 700 }}>
+                    03 · Dual‑Axis Trust Scoring &amp; Local LLM
+                  </span>
+                  <span className="axis-tag axis-tag--malicious-pattern">2 Separate Verdicts</span>
+                </div>
+                <p style={{ margin: "0.45rem 0 0", fontSize: "0.9rem", color: "var(--muted)" }}>
+                  Reports separate Vulnerability and Malicious‑pattern levels alongside a concise
+                  plain‑English summary generated by a local Ollama model.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Authentic Team Cards (Directly from Live MalDet Site) */}
           <div className="team">
             <div className="team-group">
-              <h2 className="team-group__title">Project team</h2>
+              <h3 className="team-group__title">Project team</h3>
               <div className="team-grid team-grid--duo">
-                <article className="team-card">
-                  <div className="team-card__avatar" aria-hidden="true">
-                    H
-                  </div>
-                  <div>
-                    <p className="team-card__name">Haikal</p>
+                <div className="team-card">
+                  <div className="team-card__avatar">H</div>
+                  <div className="team-card__body">
+                    <h4 className="team-card__name">Haikal</h4>
                     <p className="team-card__role">Team lead</p>
+                    <p className="team-card__blurb">
+                      Scanner orchestration, Random Forest triage pipeline, and dual‑axis scoring
+                      architecture.
+                    </p>
                     <a
-                      className="team-card__link"
                       href="https://github.com/Skidotus"
                       target="_blank"
                       rel="noopener noreferrer"
+                      className="team-card__link"
                     >
-                      <i className="bi bi-github" aria-hidden="true" /> GitHub
-                      <span className="visually-hidden"> (opens in a new tab)</span>
+                      github.com/Skidotus ↗
                     </a>
                   </div>
-                </article>
+                </div>
 
-                <article className="team-card">
-                  <div className="team-card__avatar" aria-hidden="true">
-                    A
-                  </div>
-                  <div>
-                    <p className="team-card__name">Ariff</p>
+                <div className="team-card">
+                  <div className="team-card__avatar">A</div>
+                  <div className="team-card__body">
+                    <h4 className="team-card__name">Ariff</h4>
                     <p className="team-card__role">Team member 1</p>
+                    <p className="team-card__blurb">
+                      Static analysis integration (Bandit, Semgrep, pip‑audit) and vulnerability
+                      scoring calibration.
+                    </p>
                   </div>
-                </article>
+                </div>
 
-                <article className="team-card">
-                  <div className="team-card__avatar" aria-hidden="true">
-                    A
-                  </div>
-                  <div>
-                    <p className="team-card__name">Aleena</p>
+                <div className="team-card">
+                  <div className="team-card__avatar">A</div>
+                  <div className="team-card__body">
+                    <h4 className="team-card__name">Aleena</h4>
                     <p className="team-card__role">Team member 2</p>
+                    <p className="team-card__blurb">
+                      Malicious‑pattern rule engineering (YARA, ClamAV, GuardDog) and supply‑chain
+                      typosquat detection.
+                    </p>
                   </div>
-                </article>
+                </div>
 
-                <article className="team-card">
-                  <div className="team-card__avatar" aria-hidden="true">
-                    A
-                  </div>
-                  <div>
-                    <p className="team-card__name">Adam</p>
+                <div className="team-card">
+                  <div className="team-card__avatar">A</div>
+                  <div className="team-card__body">
+                    <h4 className="team-card__name">Adam</h4>
                     <p className="team-card__role">Team member 3</p>
+                    <p className="team-card__blurb">
+                      SIEM report interface, local Ollama LLM executive summary integration, and
+                      dataset evaluation.
+                    </p>
                   </div>
-                </article>
+                </div>
               </div>
             </div>
 
             <div className="team-group">
-              <h2 className="team-group__title">Supervisor</h2>
+              <h3 className="team-group__title">Supervisor</h3>
               <div className="team-grid">
-                <article className="team-card">
-                  <div className="team-card__avatar" aria-hidden="true">
-                    L
-                  </div>
-                  <div>
-                    <p className="team-card__name">Sir Luqman</p>
+                <div className="team-card">
+                  <div className="team-card__avatar">L</div>
+                  <div className="team-card__body">
+                    <h4 className="team-card__name">Sir Luqman</h4>
                     <p className="team-card__role">Project supervisor</p>
+                    <p className="team-card__blurb">
+                      Academic advisor · Diploma in Cyber Security Technology, German‑Malaysian
+                      Institute (GMI).
+                    </p>
                   </div>
-                </article>
+                </div>
               </div>
             </div>
 
-            <article className="team-card team-card--note">
-              <i className="bi bi-mortarboard" aria-hidden="true" />
-              <p>
-                Diploma in Cyber Security Technology &middot; German-Malaysian Institute &middot;
-                2026
-              </p>
-            </article>
+            <div className="team-card team-card--note">
+              <div className="team-card__avatar">GMI</div>
+              <div className="team-card__body">
+                <p className="eyebrow" style={{ marginBottom: "0.2rem" }}>
+                  Institution
+                </p>
+                <p>Diploma in Cyber Security Technology · German‑Malaysian Institute · 2026</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Direct MalDet Server Access Panel (Using MalDet's .scan-panel layout) */}
-      <section className="section section--white" aria-labelledby="directAccessTitle">
-        <div className="site-container">
-          <div className="scan-panel">
-            <div className="scan-panel__copy">
-              <p className="eyebrow eyebrow--on-dark">Live deployment</p>
-              <h2 className="section-title section-title--on-dark" id="directAccessTitle">
-                Try MalDet on our server
-              </h2>
-              <p>
-                The full MalDet web application is hosted live for academic evaluation and testing.
-                Submit any public GitHub repository or inspect the 181 completed repository reports.
+      {/* Contact / Inquiry & Direct Live Access Section */}
+      <section className="section section--paper">
+        <div className="site-container about-split">
+          <div>
+            <p className="eyebrow">Get in touch or test live</p>
+            <h2 className="section-title">
+              Questions, academic review, or <em>live demonstration</em>.
+            </h2>
+            <p className="section-lede">
+              Evaluating MalDet for a Final Year Project assessment, research collaboration, or
+              open‑source security review? Jump straight into the live scanner or send a note to the
+              project team.
+            </p>
+
+            <div className="ledger-book" style={{ marginTop: "1.75rem", padding: "1.5rem" }}>
+              <p className="eyebrow" style={{ marginBottom: "0.4rem" }}>
+                Direct Live Endpoints
               </p>
-              <ul className="scan-panel__points">
+              <ul className="verdict-tally" style={{ marginTop: "0.5rem" }}>
                 <li>
-                  <i className="bi bi-check2" aria-hidden="true" />
-                  Live scanner at 103.233.1.97:5000
+                  <span className="dot dot--safe" />
+                  <span>Live MalDet Web Application</span>
+                  <b>
+                    <a
+                      href={MALDET_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: "var(--green-text)", textDecoration: "none" }}
+                    >
+                      103.233.1.97:5000 ↗
+                    </a>
+                  </b>
                 </li>
                 <li>
-                  <i className="bi bi-check2" aria-hidden="true" />
-                  Full SIEM report console &amp; printable summaries
+                  <span className="dot dot--low" />
+                  <span>Full Repository Scan History (181 repos)</span>
+                  <b>
+                    <a
+                      href={MALDET_HISTORY_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: "var(--green-text)", textDecoration: "none" }}
+                    >
+                      /history ↗
+                    </a>
+                  </b>
                 </li>
                 <li>
-                  <i className="bi bi-check2" aria-hidden="true" />
-                  181 scanned repositories with 63,496 triaged findings
+                  <span className="dot dot--medium" />
+                  <span>Sample SIEM Report (#201 Skidotus/maldet)</span>
+                  <b>
+                    <a
+                      href={MALDET_REPORT_201_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: "var(--green-text)", textDecoration: "none" }}
+                    >
+                      /detail/201 ↗
+                    </a>
+                  </b>
+                </li>
+                <li>
+                  <span className="dot dot--high" />
+                  <span>Team Lead GitHub Profile</span>
+                  <b>
+                    <a
+                      href="https://github.com/Skidotus"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: "var(--green-text)", textDecoration: "none" }}
+                    >
+                      @Skidotus ↗
+                    </a>
+                  </b>
                 </li>
               </ul>
             </div>
+          </div>
 
-            <div className="scan-panel__form">
-              <p className="form-label-ledger form-label-ledger--on-dark">Direct links</p>
-              <div style={{ display: "grid", gap: "0.75rem", marginTop: "0.75rem" }}>
-                <a
-                  href={MALDET_SCAN_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-ribbon btn-pill btn-lg-pill w-100"
+          <div className="inquiry-card">
+            {submitted ? (
+              <div style={{ textAlign: "center", padding: "2rem 1rem" }}>
+                <span className="seal-badge seal-safe" style={{ marginBottom: "0.75rem" }}>
+                  Inquiry Recorded
+                </span>
+                <h3
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    fontSize: "1.6rem",
+                    fontWeight: 400,
+                    margin: "0 0 0.5rem"
+                  }}
                 >
-                  <i className="bi bi-search me-2" aria-hidden="true" />
-                  Start a scan on MalDet
-                </a>
-                <a
-                  href={MALDET_REPORT_201_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-ghost-light btn-pill btn-lg-pill w-100"
-                >
-                  <i className="bi bi-shield-check me-2" aria-hidden="true" />
-                  View Report #201 (Skidotus/maldet)
-                </a>
-                <a
-                  href={MALDET_HISTORY_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-ghost-light btn-pill btn-lg-pill w-100"
-                >
-                  <i className="bi bi-clock-history me-2" aria-hidden="true" />
-                  View Full Scan History (181)
-                </a>
+                  Thank you, {name}.
+                </h3>
+                <p style={{ color: "var(--muted)", margin: "0 0 1.5rem" }}>
+                  Your message for the MalDet GMI Final Year Project team has been noted. You can
+                  also run a live repository scan right now on our server.
+                </p>
+                <div style={{ display: "flex", justifyContent: "center", gap: "0.75rem", flexWrap: "wrap" }}>
+                  <a
+                    href={MALDET_SCAN_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-ribbon btn-pill"
+                  >
+                    Open Live Scanner ↗
+                  </a>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSubmitted(false)
+                      setName("")
+                      setEmail("")
+                      setRepoUrl("")
+                      setMessage("")
+                    }}
+                    className="btn btn-outline-parchment btn-pill"
+                  >
+                    Send another message
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <form onSubmit={handleInquirySubmit} className="inquiry-grid">
+                <div>
+                  <p className="eyebrow" style={{ marginBottom: "0.25rem" }}>
+                    Project Inquiry
+                  </p>
+                  <h3
+                    style={{
+                      fontFamily: "var(--font-display)",
+                      fontSize: "1.5rem",
+                      fontWeight: 400,
+                      margin: "0 0 0.5rem"
+                    }}
+                  >
+                    Send feedback or request a repository review
+                  </h3>
+                </div>
+
+                <div className="inquiry-grid inquiry-grid--two">
+                  <div>
+                    <label htmlFor="inq_name" className="field-label">
+                      Your Name *
+                    </label>
+                    <input
+                      id="inq_name"
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g. Reviewer / Lecturer"
+                      className="field-input"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="inq_email" className="field-label">
+                      Email Address *
+                    </label>
+                    <input
+                      id="inq_email"
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@gmi.edu.my"
+                      className="field-input"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="inq_repo" className="field-label">
+                    GitHub Repository URL (Optional)
+                  </label>
+                  <input
+                    id="inq_repo"
+                    type="url"
+                    value={repoUrl}
+                    onChange={(e) => setRepoUrl(e.target.value)}
+                    placeholder="https://github.com/owner/repository"
+                    className="field-input font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="inq_msg" className="field-label">
+                    Message / Assessment Notes
+                  </label>
+                  <textarea
+                    id="inq_msg"
+                    rows={4}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Share your questions about the 6 detection engines, Random Forest triage model, or GMI FYP presentation..."
+                    className="field-input"
+                    style={{ minHeight: "110px", resize: "vertical" }}
+                  />
+                </div>
+
+                <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
+                  <button type="submit" className="btn btn-ribbon btn-pill">
+                    Submit Inquiry
+                  </button>
+                  <a
+                    href={MALDET_SCAN_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-outline-parchment btn-pill"
+                  >
+                    Or scan directly on MalDet ↗
+                  </a>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       </section>
@@ -1712,20 +1919,19 @@ function AboutPage() {
 }
 
 /* ============================================================
-   ROOT APP SHELL (Exact MalDet Header & Footer)
+   ROOT APPLICATION SHELL (Authentic MalDet Header & Footer)
    ============================================================ */
 export default function App() {
   const [page, setPage] = useState<Page>(getInitialPage)
-  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [showBackToTop, setShowBackToTop] = useState(false)
+  const prefersReducedMotion = useReducedMotion()
+  const { scrollYProgress } = useScroll()
 
   useEffect(() => {
-    const prefersReduced =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    if (prefersReduced) return
-
+    if (prefersReducedMotion) return
     const lenis = new Lenis({
-      duration: 1.0,
+      duration: 1.05,
       smoothWheel: true
     })
     let rafId = 0
@@ -1738,105 +1944,115 @@ export default function App() {
       cancelAnimationFrame(rafId)
       lenis.destroy()
     }
-  }, [])
+  }, [prefersReducedMotion])
 
   useEffect(() => {
     const onHashChange = () => {
       setPage(getInitialPage())
-      setMobileNavOpen(false)
+      setMobileMenuOpen(false)
       window.scrollTo({ top: 0, behavior: "smooth" })
     }
     window.addEventListener("hashchange", onHashChange)
     return () => window.removeEventListener("hashchange", onHashChange)
   }, [])
 
+  useEffect(() => {
+    const onScroll = () => {
+      setShowBackToTop(window.scrollY > 420)
+    }
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
   const navigateTo = (target: Page) => {
     window.location.hash = `#/${target}`
     setPage(target)
-    setMobileNavOpen(false)
+    setMobileMenuOpen(false)
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   return (
-    <div className="maldet-root">
-      <a className="skip-link" href="#main">
-        Skip to content
-      </a>
+    <div className="app-root">
+      {/* Top Scroll Progress Bar */}
+      <motion.div
+        className="scroll-progress"
+        style={{ scaleX: scrollYProgress }}
+        aria-hidden="true"
+      />
 
-      {/* Exact MalDet Header */}
+      {/* Authentic MalDet Frosted Forest Header */}
       <header className="site-nav">
-        <div className="site-container">
-          <div className="site-nav__row">
+        <div className="site-container site-nav__row">
+          <button
+            type="button"
+            onClick={() => navigateTo("about")}
+            className="brand"
+            aria-label="MalDet Home"
+          >
+            <img src={MALDET_LOGO_SRC} alt="MalDet logo" className="brand__logo" />
+            <span className="brand__text">MalDet</span>
+            <span className="brand__badge">GMI FYP · 2026</span>
+          </button>
+
+          <button
+            type="button"
+            className="nav-toggler"
+            aria-label="Toggle navigation"
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
+
+          <nav
+            className={`site-nav__links${mobileMenuOpen ? " is-open" : ""}`}
+            aria-label="Primary navigation"
+          >
             <button
               type="button"
-              className="brand"
               onClick={() => navigateTo("about")}
-              aria-label="MalDet home"
+              className={`site-nav__link${page === "about" ? " site-nav__link--active" : ""}`}
             >
-              <img src={MALDET_LOGO_SRC} alt="MalDet logo" className="brand__logo" />
-              <span className="brand__text">MalDet</span>
+              Overview
             </button>
-
             <button
-              className="nav-toggler"
               type="button"
-              aria-controls="navMain"
-              aria-expanded={mobileNavOpen}
-              aria-label="Toggle navigation"
-              onClick={() => setMobileNavOpen((prev) => !prev)}
+              onClick={() => navigateTo("documentation")}
+              className={`site-nav__link${
+                page === "documentation" ? " site-nav__link--active" : ""
+              }`}
             >
-              <span />
-              <span />
-              <span />
+              How It Works &amp; Tools
             </button>
-
-            <nav
-              className={`site-nav__links${mobileNavOpen ? " show" : ""}`}
-              id="navMain"
-              aria-label="Main"
+            <button
+              type="button"
+              onClick={() => navigateTo("contact")}
+              className={`site-nav__link${page === "contact" ? " site-nav__link--active" : ""}`}
             >
-              <button
-                type="button"
-                onClick={() => navigateTo("about")}
-                className={`site-nav__link${page === "about" ? " is-active" : ""}`}
-              >
-                Overview
-              </button>
-              <button
-                type="button"
-                onClick={() => navigateTo("documentation")}
-                className={`site-nav__link${page === "documentation" ? " is-active" : ""}`}
-              >
-                Tools &amp; UI
-              </button>
-              <button
-                type="button"
-                onClick={() => navigateTo("contact")}
-                className={`site-nav__link${page === "contact" ? " is-active" : ""}`}
-              >
-                About
-              </button>
-              <a
-                className="btn btn-ribbon btn-pill site-nav__cta"
-                href={MALDET_SCAN_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Start a scan
-              </a>
-            </nav>
-          </div>
+              About Us &amp; Team
+            </button>
+            <a
+              href={MALDET_SCAN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-ribbon btn-pill site-nav__cta"
+            >
+              Start a scan ↗
+            </a>
+          </nav>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main id="main">
+      {/* Main Page Content */}
+      <main>
         {page === "about" && <OverviewPage onNavigate={navigateTo} />}
-        {page === "documentation" && <HowItWorksPage />}
-        {page === "contact" && <AboutPage />}
+        {page === "documentation" && <HowItWorksPage onNavigate={navigateTo} />}
+        {page === "contact" && <AboutUsTeamPage />}
       </main>
 
-      {/* Exact MalDet Footer */}
+      {/* Authentic MalDet Floating Forest Footer */}
       <footer className="site-footer">
         <div className="site-container">
           <div className="site-footer__panel">
@@ -1844,68 +2060,78 @@ export default function App() {
               <div className="site-footer__brand">
                 <button
                   type="button"
-                  className="brand"
                   onClick={() => navigateTo("about")}
+                  className="brand"
                 >
                   <img src={MALDET_LOGO_SRC} alt="MalDet logo" className="brand__logo" />
                   <span className="brand__text">MalDet</span>
                 </button>
                 <p>
-                  Static analysis and supply-chain risk scanning for public GitHub repositories,
-                  before you clone, install or depend on them.
+                  AI‑driven malware detection and trust scoring for public GitHub repositories.
+                  Final Year Project · German‑Malaysian Institute.
                 </p>
               </div>
+
               <div>
-                <h2 className="site-footer__heading">Project</h2>
+                <div className="site-footer__heading">Commercial Showcase</div>
                 <ul className="site-footer__list">
                   <li>
                     <button type="button" onClick={() => navigateTo("about")}>
-                      Overview
+                      Overview &amp; Problem/Solution
                     </button>
                   </li>
                   <li>
                     <button type="button" onClick={() => navigateTo("documentation")}>
-                      Detection engines &amp; UI
+                      How It Works, 8 Tools &amp; UI
                     </button>
                   </li>
                   <li>
                     <button type="button" onClick={() => navigateTo("contact")}>
-                      About us
+                      About Us &amp; GMI Team
                     </button>
                   </li>
                 </ul>
               </div>
+
               <div>
-                <h2 className="site-footer__heading">Scanner</h2>
+                <div className="site-footer__heading">Live MalDet Scanner</div>
                 <ul className="site-footer__list">
                   <li>
                     <a href={MALDET_SCAN_URL} target="_blank" rel="noopener noreferrer">
-                      Start a scan
+                      Start a scan ↗
                     </a>
                   </li>
                   <li>
-                    <a href={`${MALDET_URL}#history`} target="_blank" rel="noopener noreferrer">
-                      Recent scans
+                    <a href={MALDET_REPORT_201_URL} target="_blank" rel="noopener noreferrer">
+                      Sample Report (#201) ↗
                     </a>
                   </li>
                   <li>
                     <a href={MALDET_HISTORY_URL} target="_blank" rel="noopener noreferrer">
-                      Full history
+                      Full scan history (181) ↗
                     </a>
                   </li>
                 </ul>
               </div>
             </div>
+
             <div className="site-footer__base">
-              <span>
-                &copy; 2026 MalDet &middot; Final Year Project, Diploma in Cyber Security
-                Technology, German-Malaysian Institute
-              </span>
-              <span>For academic use only</span>
+              <span>© 2026 MalDet Team · German‑Malaysian Institute</span>
+              <span>Bandit · Semgrep · pip‑audit · YARA · ClamAV · GuardDog · Scikit‑Learn</span>
             </div>
           </div>
         </div>
       </footer>
+
+      {/* Back to Top Button */}
+      <button
+        type="button"
+        aria-label="Scroll back to top"
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        className={`back-to-top${showBackToTop ? " is-visible" : ""}`}
+      >
+        ↑
+      </button>
     </div>
   )
 }
