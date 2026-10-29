@@ -1297,32 +1297,9 @@ const topologyNodes: TopologyNodeSpec[] = [
   },
 ]
 
-interface TopologyEdgeSpec {
-  id: string
-  from: string
-  to: string
-  d: string
-  label: string
-  duration: number
-}
-
-const topologyEdges: TopologyEdgeSpec[] = [
-  { id: "pc-switch", from: "pc", to: "switch", d: "M 500 108 L 500 212", label: "Clone", duration: 2.2 },
-  { id: "switch-server", from: "switch", to: "server", d: "M 500 280 L 500 320 L 212 320 L 212 360", label: "Findings", duration: 2.6 },
-  { id: "switch-user1", from: "switch", to: "user1", d: "M 500 280 L 500 360", label: "Weights", duration: 2.0 },
-  { id: "switch-user2", from: "switch", to: "user2", d: "M 500 280 L 500 320 L 788 320 L 788 360", label: "Report", duration: 2.8 },
-]
-
 const viewModeLabels: Record<TopologyViewMode, string> = {
   physical: "Architecture Flow",
   logical: "Triage Pipeline",
-}
-
-const edgeLabelPositions: Record<string, { x: number; y: number }> = {
-  "pc-switch": { x: 514, y: 165 },
-  "switch-server": { x: 330, y: 313 },
-  "switch-user1": { x: 514, y: 330 },
-  "switch-user2": { x: 650, y: 313 },
 }
 
 function TopologyNodeButton({
@@ -1331,12 +1308,16 @@ function TopologyNodeButton({
   onHover,
   onOpen,
   orientation = "vertical",
+  tipPlacement = "top",
+  mode = "physical",
 }: {
   node: TopologyNodeSpec
   tipOpen: boolean
   onHover: (id: string | null) => void
   onOpen: (id: string) => void
   orientation?: "vertical" | "horizontal"
+  tipPlacement?: "top" | "bottom"
+  mode?: TopologyViewMode
 }) {
   return (
     <button
@@ -1380,9 +1361,17 @@ function TopologyNodeButton({
       </span>
       <span className="topo-node-meta">
         <strong>{node.label}</strong>
-        <span>{node.ip}</span>
+        <span>{mode === "logical" ? node.protocol : node.ip}</span>
+        {mode === "logical" && (
+          <small className="topo-node-subdetail">{node.detail}</small>
+        )}
       </span>
-      <span className="topo-tip" id={`tip-${node.id}`} role="tooltip" data-open={tipOpen}>
+      <span
+        className={`topo-tip topo-tip-${tipPlacement}`}
+        id={`tip-${node.id}`}
+        role="tooltip"
+        data-open={tipOpen ? "true" : undefined}
+      >
         <strong>{node.label}</strong>
         <span>{node.ip} · {node.protocol}</span>
         <span className="topo-tip-role">{node.role}</span>
@@ -1400,8 +1389,35 @@ function Topology() {
   const activeSpec = topologyNodes.find((n) => n.id === activeNode) ?? null
   const nodeSpec = (id: string) => topologyNodes.find((n) => n.id === id)!
 
+  const branchEdges = [
+    {
+      id: "switch-server",
+      d: "M 450 0 L 450 44 L 150 44 L 150 96",
+      label: mode === "logical" ? "63,496 RAW ALERTS" : "FINDINGS",
+      lx: 290,
+      ly: 34,
+      duration: 2.6,
+    },
+    {
+      id: "switch-user1",
+      d: "M 450 0 L 450 96",
+      label: mode === "logical" ? "ML WEIGHTS" : "WEIGHTS",
+      lx: 462,
+      ly: 72,
+      duration: 2.0,
+    },
+    {
+      id: "switch-user2",
+      d: "M 450 0 L 450 44 L 750 44 L 750 96",
+      label: mode === "logical" ? "LOCKED VERDICTS" : "REPORT",
+      lx: 610,
+      ly: 34,
+      duration: 2.8,
+    },
+  ]
+
   return (
-    <div className="topology-wrap topo-mode-logical">
+    <div className={`topology-wrap topo-mode-${mode}`}>
       <div className="topo-mode-toggle" role="tablist" aria-label="Architecture view mode">
         {(Object.keys(viewModeLabels) as TopologyViewMode[]).map((m) => (
           <button
@@ -1422,48 +1438,6 @@ function Topology() {
         role="img"
         aria-label="MalDet scanning architecture: GitHub repository target feeds into the MalDet Orchestrator, which coordinates the Random Forest Classifier, Dual-Axis Trust Scorer, and Local LLM & Web Console"
       >
-        <svg className="logical-edges" viewBox="0 0 1000 760" preserveAspectRatio="none" aria-hidden="true">
-          <defs>
-            <radialGradient id="topo-particle" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-              <stop offset="40%" stopColor="var(--color-primary)" stopOpacity="0.9" />
-              <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
-            </radialGradient>
-          </defs>
-          {topologyEdges.map((edge) => {
-            const mid = edgeLabelPositions[edge.id]
-            return (
-              <g key={edge.id}>
-                <path d={edge.d} className="topo-edge-track" />
-                <path
-                  d={edge.d}
-                  className="topo-edge-flow"
-                  style={{ animationDuration: `${edge.duration}s` }}
-                />
-                {mid && (
-                  <text x={mid.x} y={mid.y} className="topo-edge-label">
-                    {edge.label}
-                  </text>
-                )}
-              </g>
-            )
-          })}
-          <g className="topo-particle-group" aria-hidden="true">
-            {topologyEdges.map((edge) => (
-              <circle key={`p-${edge.id}`} r="5" fill="url(#topo-particle)">
-                <animateMotion dur={`${edge.duration}s`} repeatCount="indefinite" path={edge.d} />
-                <animate
-                  attributeName="opacity"
-                  values="0;1;1;0"
-                  keyTimes="0;0.08;0.92;1"
-                  dur={`${edge.duration}s`}
-                  repeatCount="indefinite"
-                />
-              </circle>
-            ))}
-          </g>
-        </svg>
-
         <div className="logical-node logical-node-pc">
           <TopologyNodeButton
             node={nodeSpec("pc")}
@@ -1471,11 +1445,47 @@ function Topology() {
             onHover={setHoverTip}
             onOpen={setActiveNode}
             orientation="horizontal"
+            tipPlacement="bottom"
+            mode={mode}
           />
         </div>
 
+        {/* Dedicated vertical connector between GitHub Target and Sandbox */}
+        <div className="topo-connector-vertical-wrap" aria-hidden="true">
+          <svg className="topo-connector-vertical" viewBox="0 0 240 68">
+            <defs>
+              <radialGradient id="topo-particle-top" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+                <stop offset="40%" stopColor="var(--color-primary)" stopOpacity="0.9" />
+                <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
+              </radialGradient>
+            </defs>
+            <path d="M 120 0 L 120 68" className="topo-edge-track" />
+            <path
+              d="M 120 0 L 120 68"
+              className="topo-edge-flow"
+              style={{ animationDuration: "2.2s" }}
+            />
+            <text x="132" y="38" className="topo-edge-label">
+              {mode === "logical" ? "SHALLOW ARCHIVE" : "CLONE"}
+            </text>
+            <g className="topo-particle-group">
+              <circle r="5" fill="url(#topo-particle-top)">
+                <animateMotion dur="2.2s" repeatCount="indefinite" path="M 120 0 L 120 68" />
+                <animate
+                  attributeName="opacity"
+                  values="0;1;1;0"
+                  keyTimes="0;0.1;0.9;1"
+                  dur="2.2s"
+                  repeatCount="indefinite"
+                />
+              </circle>
+            </g>
+          </svg>
+        </div>
+
         <div className="logical-lan">
-          <span className="logical-lan-label">MalDet Sandbox & Scoring Engine</span>
+          <span className="logical-lan-label">MalDet Sandbox &amp; Scoring Engine</span>
 
           <div className="logical-node logical-node-switch">
             <TopologyNodeButton
@@ -1484,7 +1494,54 @@ function Topology() {
               onHover={setHoverTip}
               onOpen={setActiveNode}
               orientation="horizontal"
+              tipPlacement="top"
+              mode={mode}
             />
+          </div>
+
+          {/* Dedicated 3-way branch connector between Orchestrator and the 3 bottom engines */}
+          <div className="topo-connector-branch-wrap" aria-hidden="true">
+            <svg className="topo-connector-branch" viewBox="0 0 900 96" preserveAspectRatio="none">
+              <defs>
+                <radialGradient id="topo-particle" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+                  <stop offset="40%" stopColor="var(--color-primary)" stopOpacity="0.9" />
+                  <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
+                </radialGradient>
+              </defs>
+              {branchEdges.map((edge) => (
+                <g key={edge.id}>
+                  <path d={edge.d} className="topo-edge-track" />
+                  <path
+                    d={edge.d}
+                    className="topo-edge-flow"
+                    style={{ animationDuration: `${edge.duration}s` }}
+                  />
+                  <text
+                    x={edge.lx}
+                    y={edge.ly}
+                    textAnchor={edge.id === "switch-user1" ? "start" : "middle"}
+                    className="topo-edge-label"
+                  >
+                    {edge.label}
+                  </text>
+                </g>
+              ))}
+              <g className="topo-particle-group">
+                {branchEdges.map((edge) => (
+                  <circle key={`p-${edge.id}`} r="5" fill="url(#topo-particle)">
+                    <animateMotion dur={`${edge.duration}s`} repeatCount="indefinite" path={edge.d} />
+                    <animate
+                      attributeName="opacity"
+                      values="0;1;1;0"
+                      keyTimes="0;0.08;0.92;1"
+                      dur={`${edge.duration}s`}
+                      repeatCount="indefinite"
+                    />
+                  </circle>
+                ))}
+              </g>
+            </svg>
           </div>
 
           <div className="logical-grid">
@@ -1493,18 +1550,24 @@ function Topology() {
               tipOpen={hoverTip === "server"}
               onHover={setHoverTip}
               onOpen={setActiveNode}
+              tipPlacement="top"
+              mode={mode}
             />
             <TopologyNodeButton
               node={nodeSpec("user1")}
               tipOpen={hoverTip === "user1"}
               onHover={setHoverTip}
               onOpen={setActiveNode}
+              tipPlacement="top"
+              mode={mode}
             />
             <TopologyNodeButton
               node={nodeSpec("user2")}
               tipOpen={hoverTip === "user2"}
               onHover={setHoverTip}
               onOpen={setActiveNode}
+              tipPlacement="top"
+              mode={mode}
             />
           </div>
         </div>
