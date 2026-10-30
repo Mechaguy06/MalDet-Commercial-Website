@@ -234,35 +234,35 @@ const interfaceData = [
 const team = [
   {
     initials: "SL",
-    name: "Sir Luqman",
-    role: "Project Supervisor",
-    blurb: "Academic advisor guiding project methodology, cybersecurity architecture, and evaluation.",
+    name: "Muhammad Luqman Hakim Mohd Sabani",
+    role: "Project Supervisor (Sir Luqman) · Intake July 24 · DCBS 5",
+    blurb: "Academic advisor guiding project methodology, cybersecurity architecture, and evaluation at German-Malaysian Institute.",
     supervisor: true,
   },
   {
     initials: "HK",
-    name: "Haikal",
-    role: "Team Lead & Core System Architect",
+    name: "Haikal Hakimi Bin Zolkifly",
+    role: "Team Lead & Core System Architect · CBS24070294",
     blurb: "Lead developer overseeing scanner orchestration, ML pipeline integration, and full-stack architecture.",
     github: "https://github.com/Skidotus",
   },
   {
     initials: "AR",
-    name: "Ariff",
-    role: "Project Team Member · Security & Detection Engines",
+    name: "Abdul Ariff Aqil Bin Abdul Shukur",
+    role: "Project Team Member · CBS24071156",
     blurb: "Responsible for static analysis tool integration, rule tuning, and vulnerability scoring.",
   },
   {
-    initials: "AL",
-    name: "Aleena",
-    role: "Project Team Member · AI Classifier & Data Triage",
-    blurb: "Focused on dataset preparation, Random Forest model training, and false-positive noise reduction.",
+    initials: "AD",
+    name: "Adam Akmal Bin Mohd Faizal",
+    role: "Project Team Member · CBS24070303",
+    blurb: "Designed the web dashboard interface, interactive report console, and scan history views.",
   },
   {
-    initials: "AD",
-    name: "Adam",
-    role: "Project Team Member · Web Interface & Reporting",
-    blurb: "Designed the forest-and-paper ledger interface, interactive report console, and scan history views.",
+    initials: "AL",
+    name: "Aleena Syakila Aqmar Binti Julailey",
+    role: "Project Team Member · CBS24070540",
+    blurb: "Focused on dataset preparation, Random Forest model training, and false-positive noise reduction.",
   },
 ]
 
@@ -1226,199 +1226,508 @@ function Workflow() {
   )
 }
 
-type TopologyViewMode = "physical" | "logical"
+type TopologyViewMode = "flowchart" | "block" | "physical" | "logical"
 
 interface TopologyNodeSpec {
   id: string
-  type: "monitor" | "switch" | "server" | "user"
+  type: "laptop" | "cloud" | "router" | "server" | "block" | "flow" | "diamond" | "oval"
   label: string
+  sublabel?: string
   role: string
   ip: string
   protocol: string
   detail: string
   documentation: string
+  sideBadges?: string[]
 }
 
-const topologyNodes: TopologyNodeSpec[] = [
-  {
-    id: "pc",
-    type: "monitor",
-    label: "GitHub Repository Target",
-    role: "Public source & archive ingestion",
-    ip: "api.github.com",
-    protocol: "HTTPS · Shallow Clone",
-    detail: "Fetches metadata & extracts .zip/.7z/.rar",
+const methodologySpecs: Record<string, TopologyNodeSpec> = {
+  /* ===== 8.4 & 8.3 Network Diagram Nodes ===== */
+  "net-client": {
+    id: "net-client",
+    type: "laptop",
+    label: "Client Device",
+    sublabel: "External User / Browser & Web Extension",
+    role: "8.3 & 8.4 · External User Endpoint",
+    ip: "Public Internet (WAN)",
+    protocol: "HTTPS / Port 443 · Google Chrome",
+    detail: "Initiates standard secure web requests & Chrome extension scans",
     documentation:
-      "MalDet connects to the public GitHub API to retrieve repository metadata (stars, primary language, owner) and performs a shallow clone into an isolated workspace. Nested archives—including password-protected malware samples—are safely unpacked before inspection.",
+      "Represents an external user initiating a standard, secure web request (HTTPS / Port 443) over the public internet to access the MalDet web application or trigger a one-click repository scan via the Google Chrome extension (Intel i5 10th Gen+ / Ryzen 5, 8GB RAM).",
   },
-  {
-    id: "switch",
-    type: "switch",
-    label: "MalDet Orchestrator",
-    role: "6-Engine Static Analysis Core",
-    ip: "103.233.1.97:5000",
-    protocol: "Gunicorn · Multi-Engine Pipeline",
-    detail: "Bandit, Semgrep, pip-audit, YARA, ClamAV, GuardDog",
+  "net-cloudflare": {
+    id: "net-cloudflare",
+    type: "cloud",
+    label: "CloudFlare Edge Network",
+    sublabel: "Global Edge Reverse Proxy & DNS",
+    role: "8.3 & 8.4 · WAN Edge Intermediary",
+    ip: "CloudFlare Global Anycast Edge",
+    protocol: "HTTPS (Port 443) ↔ Tunnel (Port 7844)",
+    detail: "Acts as a secure intermediary & reverse proxy",
     documentation:
-      "The central MalDet scanning controller coordinates six open-source detection engines alongside our custom Dependency Checker. It normalizes heterogeneous JSON and text outputs into a unified finding schema without executing any code from the target repository.",
+      "Acts as a secure intermediary and reverse proxy between the client and the local hosting environment. Instead of resolving the web address directly to the local network's router, external DNS routes the client's request to CloudFlare's global edge servers.",
   },
-  {
-    id: "server",
+  "net-router": {
+    id: "net-router",
+    type: "router",
+    label: "Network Router",
+    sublabel: "Local Subnet Gateway",
+    role: "8.3 & 8.4 · LAN Gateway Router",
+    ip: "Public IP: 14.192.x.x (CGNAT/Dynamic)",
+    protocol: "Net Addr: 192.168.1.0/24 · Port 7844 Outbound",
+    detail: "Gateway for local subnet; no inbound port forwarding needed",
+    sideBadges: ["Public IP (CGNAT/Dynamic IP) : 14.192.x.x", "Net Addr : 192.168.1.0/24"],
+    documentation:
+      "Network Router serves as the gateway for the local subnet (192.168.1.0/24). Notably, because of the CloudFlare outbound tunnel architecture, the public IP (14.192.x.x) assigned to this router—even if dynamic or behind CGNAT—does not need to accept inbound connections from the internet.",
+  },
+  "net-host": {
+    id: "net-host",
     type: "server",
-    label: "Random Forest Classifier",
-    role: "ML Noise Triage & Confidence Scoring",
-    ip: "ML Triage Engine",
-    protocol: "Scikit-Learn · Confidence Weighting",
-    detail: "Rates findings as Likely Real, Uncertain, or Noise",
+    label: "Web Hosting Machine",
+    sublabel: "Ubuntu Linux Server in VMware / VirtualBox",
+    role: "8.3 & 8.4 · Core Application & AI Server",
+    ip: "192.168.1.10 · cloudflared",
+    protocol: "Ubuntu Linux · Flask · Python · MySQL/SQLite",
+    detail: "Runs cloudflared daemon, static scanners, and ML Risk Engine",
+    sideBadges: ["192.168.1.10", "cloudflared"],
     documentation:
-      "Six engines on a large repository can generate thousands of raw alerts. Our trained Random Forest model evaluates each finding's features and assigns a probability confidence score—ensuring high-confidence threats drive the verdict while likely noise is down-weighted.",
+      "The internal server hosting the core MalDet application on Ubuntu Linux inside VMware/VirtualBox (Intel i5 10th Gen+ / Ryzen 5, 16GB RAM, 512GB SSD, NVIDIA CUDA GPU). It runs the cloudflared daemon, which establishes and maintains the outbound encrypted tunnel (Port 7844 / HTTPS) to the CloudFlare Edge Network.",
   },
-  {
-    id: "user1",
-    type: "user",
-    label: "Dual-Axis Trust Scorer",
-    role: "Vulnerability & Malicious Verdicts",
-    ip: "Verdict Engine",
-    protocol: "5-Tier Scale (Safe → Critical)",
-    detail: "Separates coding bugs from deliberate malware",
+
+  /* ===== 8.2 Block Diagram Nodes (Figure 10) ===== */
+  "blk-github": {
+    id: "blk-github",
+    type: "block",
+    label: "GitHub API",
+    sublabel: "REST API & Repository Source",
+    role: "8.2 Block Diagram · Stage 01",
+    ip: "api.github.com",
+    protocol: "GitHub REST API · Python Requests · Git",
+    detail: "Accesses public/private repositories & retrieves metadata",
     documentation:
-      "Computes two independent risk scores: the Vulnerability verdict (from Bandit, Semgrep, and pip-audit) and the Malicious-Pattern verdict (from YARA, ClamAV, GuardDog, and the Dependency Checker). Each axis receives a clear seal from Safe to Critical.",
+      "Connects to the GitHub REST API using Python Requests and Git to fetch repository metadata (commits, file sizes, contributors, stars) and clone target repository archives for static inspection.",
   },
-  {
-    id: "user2",
-    type: "user",
-    label: "Local LLM & Web Console",
-    role: "Plain-English Summary & Ledger",
-    ip: "Web UI & History",
-    protocol: "Deterministic Guardrails · SQLite/Ledger",
-    detail: "Explains findings & stores historical reports",
+  "blk-scheduler": {
+    id: "blk-scheduler",
+    type: "block",
+    label: "Auto Scheduler",
+    sublabel: "Periodic Repository Discovery",
+    role: "8.2 Block Diagram · Stage 02",
+    ip: "Scheduler Service",
+    protocol: "Automated Discovery & Rescan Triggers",
+    detail: "Schedules periodic discovery & manual URL scan jobs",
     documentation:
-      "A local language model translates technical findings into a concise plain-English paragraph for rapid review. By design, risk levels are locked before the LLM runs so it can never hallucinate or alter a verdict. Results are saved to the persistent scan history.",
+      "Coordinates both user-initiated repository scans and automated periodic repository discovery, forwarding validated targets into the Queue Manager.",
   },
-]
+  "blk-queue": {
+    id: "blk-queue",
+    type: "block",
+    label: "Queue Manager",
+    sublabel: "Resource & Load Threshold Controller",
+    role: "8.2 Block Diagram · Stage 03",
+    ip: "Task Queue Controller",
+    protocol: "CPU & Memory Resource Limitation Control",
+    detail: "Checks system load < threshold before dequeuing",
+    documentation:
+      "Enforces CPU and memory resource limits to prevent abuse or denial-of-service from large or malicious repositories. Jobs wait in queue until system load is below threshold, then unpack into a temporary isolated directory.",
+  },
+  "blk-static": {
+    id: "blk-static",
+    type: "block",
+    label: "Static Analysis",
+    sublabel: "Bandit · Semgrep CLI · YARA · Metadata Extractor",
+    role: "8.2 Block Diagram · Stage 04",
+    ip: "Isolated Sandbox Directory",
+    protocol: "No Code Execution Policy · Multi-Engine Scan",
+    detail: "Detects vulnerabilities, malware signatures & obfuscation",
+    documentation:
+      "Performs strictly static analysis without executing any downloaded code. Runs Vulnerability Scanners (Bandit, Semgrep CLI), Pattern Detection (YARA rules, ClamAV, GuardDog, Dependency Checker), and the Metadata Extractor in parallel.",
+  },
+  "blk-ml": {
+    id: "blk-ml",
+    type: "block",
+    label: "ML Risk Engine",
+    sublabel: "Scikit-learn Classifier & Risk Scoring",
+    role: "8.2 Block Diagram · Stage 05",
+    ip: "AI Risk Scoring Engine",
+    protocol: "Scikit-learn · Pandas · Weighted Score (High×5, Med×3, Low×1)",
+    detail: "Classifies findings & computes final repository risk score",
+    documentation:
+      "Processes extracted features and tool outputs using Pandas and a trained Scikit-learn Random Forest classifier to predict risk levels and compute weighted risk scores (High×5, Medium×3, Low×1).",
+  },
+  "blk-db": {
+    id: "blk-db",
+    type: "block",
+    label: "Database",
+    sublabel: "MySQL / PostgreSQL / SQLite Storage",
+    role: "8.2 Block Diagram · Stage 06",
+    ip: "Local Database Server",
+    protocol: "MySQL / SQLite · Persistent Audit Repository",
+    detail: "Stores repository records, scan logs, datasets & results",
+    documentation:
+      "Central relational storage for all repository metadata, historical scan logs, training datasets, and per-finding severity breakdowns so users can compare repositories over time.",
+  },
+  "blk-dashboard": {
+    id: "blk-dashboard",
+    type: "block",
+    label: "Dashboard / Report",
+    sublabel: "Flask Web Dashboard & Automated Report Generator",
+    role: "8.2 Block Diagram · Stage 07",
+    ip: "http://103.233.1.97:5000/",
+    protocol: "Flask · Matplotlib · Chrome Web Extension",
+    detail: "Displays risk scores, visual breakdown charts & reports",
+    documentation:
+      "Flask-powered web dashboard displaying recently scanned high-risk repositories, historical scan lists, malicious code trends, vulnerability breakdown charts, and printable security reports.",
+  },
+
+  /* ===== 8.1 System Design Flowchart Nodes (Figure 9) ===== */
+  "fl-start": {
+    id: "fl-start",
+    type: "oval",
+    label: "START",
+    role: "8.1 System Design · Entry Point",
+    ip: "Workflow Start",
+    protocol: "User Session Initialization",
+    detail: "Begins the MalDet repository scanning workflow",
+    documentation: "Entry point of the Section 8.1 System Design flowchart (Figure 9).",
+  },
+  "fl-dashboard": {
+    id: "fl-dashboard",
+    type: "flow",
+    label: "User enter web dashboard",
+    sublabel: "(Display recent scan, trend, scan button)",
+    role: "8.1 System Design · Step 01",
+    ip: "Web Dashboard Landing",
+    protocol: "Flask Web UI",
+    detail: "Displays recent scans, malicious code trends & scan button",
+    documentation:
+      "When the user opens the MalDet web dashboard, the interface immediately presents recently scanned repositories, risk trends, and the primary action button to enter the malware scanner section.",
+  },
+  "fl-scanner-sec": {
+    id: "fl-scanner-sec",
+    type: "flow",
+    label: "Enter malware scanner section",
+    role: "8.1 System Design · Step 02",
+    ip: "Scanner Module (#scan)",
+    protocol: "Targeted Repository Analysis View",
+    detail: "Opens the GitHub URL ingestion form",
+    documentation:
+      "Navigates to the core GitHub Repository Scanner module designed for targeted URL analysis.",
+  },
+  "fl-input-url": {
+    id: "fl-input-url",
+    type: "flow",
+    label: "Enter repositories URL",
+    sublabel: "Input Parallelogram",
+    role: "8.1 System Design · Step 03 (User Input)",
+    ip: "https://github.com/owner/repo",
+    protocol: "URL Input / Chrome Extension Trigger",
+    detail: "User pastes target public GitHub repository URL",
+    documentation:
+      "The user inputs a specific GitHub repository URL (or clicks the 'Scan' button directly on GitHub via the MalDet Web Extension).",
+  },
+  "fl-validate": {
+    id: "fl-validate",
+    type: "flow",
+    label: "Scan and validate repo",
+    role: "8.1 System Design · Step 04",
+    ip: "GitHub REST API Check",
+    protocol: "Python Requests · URL & Repo Validation",
+    detail: "Verifies repository existence and accessibility",
+    documentation:
+      "Validates the GitHub URL format and queries the GitHub API to confirm the repository exists and is accessible before queuing.",
+  },
+  "fl-queue": {
+    id: "fl-queue",
+    type: "flow",
+    label: "Add repo to scan queue",
+    role: "8.1 System Design · Step 05",
+    ip: "Queue Manager",
+    protocol: "Asynchronous Job Queue",
+    detail: "Enqueues validated repository for sandbox scanning",
+    documentation:
+      "Adds the validated repository target to the internal scan queue managed by the Queue Manager.",
+  },
+  "fl-limits": {
+    id: "fl-limits",
+    type: "flow",
+    label: "Check system resource limits",
+    role: "8.1 System Design · Step 06",
+    ip: "Resource Limitation Control",
+    protocol: "CPU & RAM Utilization Monitor",
+    detail: "Monitors server CPU & memory before starting scan",
+    documentation:
+      "Enforces Section 10.0 Resource Limitation Control: checks current CPU and memory utilization on the Ubuntu server to prevent overload or denial-of-service from large repositories.",
+  },
+  "fl-threshold": {
+    id: "fl-threshold",
+    type: "diamond",
+    label: "is load < threshold?",
+    sublabel: "No → Wait · Yes → Dequeue repo",
+    role: "8.1 System Design · Decision Gate",
+    ip: "Load Threshold Gate",
+    protocol: "Conditional Branch (Yes / No)",
+    detail: "If No: Wait & re-check · If Yes: Proceed to Dequeue repo",
+    documentation:
+      "Decision diamond in Figure 9: if system load exceeds the safe threshold ('No'), the job enters the 'Wait' state and loops back to 'Check system resource limits'. Once load is below threshold ('Yes'), it proceeds to 'Dequeue repo'.",
+  },
+  "fl-wait": {
+    id: "fl-wait",
+    type: "flow",
+    label: "Wait",
+    sublabel: "No branch → Loops to Resource Check",
+    role: "8.1 System Design · Backoff Loop",
+    ip: "Queue Hold State",
+    protocol: "Throttled Wait Loop",
+    detail: "Holds scan job until server resources free up",
+    documentation:
+      "When server load is above threshold, the job waits safely in queue and loops back to re-evaluate system resource limits.",
+  },
+  "fl-dequeue": {
+    id: "fl-dequeue",
+    type: "flow",
+    label: "Dequeue repo",
+    sublabel: "Yes branch",
+    role: "8.1 System Design · Step 07",
+    ip: "Worker Dispatch",
+    protocol: "Active Scan Worker",
+    detail: "Pops repository job from queue for execution",
+    documentation:
+      "When system load is below threshold, the Queue Manager dequeues the repository and assigns it to an active scan worker.",
+  },
+  "fl-temp": {
+    id: "fl-temp",
+    type: "flow",
+    label: "Create temporary folder",
+    role: "8.1 System Design · Step 08",
+    ip: "Temporary Repository Storage",
+    protocol: "Isolated Sandbox Directory",
+    detail: "Creates ephemeral workspace (deleted immediately after scan)",
+    documentation:
+      "Implements Section 10.0 Temporary Repository Storage: creates an isolated temporary directory to hold repository files during analysis, which is deleted immediately after scanning.",
+  },
+  "fl-clone": {
+    id: "fl-clone",
+    type: "flow",
+    label: "Clone repo",
+    role: "8.1 System Design · Step 09",
+    ip: "Git + GitHub API",
+    protocol: "Shallow Clone & Archive Unpack",
+    detail: "Downloads repository source code into temporary folder",
+    documentation:
+      "Clones the target GitHub repository into the isolated temporary directory without executing any build hooks or scripts.",
+  },
+  "fl-static-begin": {
+    id: "fl-static-begin",
+    type: "flow",
+    label: "Static Analysis Scanner begin",
+    role: "8.1 System Design · Step 10",
+    ip: "Multi-Engine Orchestrator",
+    protocol: "Parallel Static Inspection (No Code Execution)",
+    detail: "Dispatches 3 parallel analysis tracks",
+    documentation:
+      "Initiates the parallel static analysis phase across Vulnerability Scanning, Pattern Detection, and Metadata Extraction.",
+  },
+  "fl-vuln": {
+    id: "fl-vuln",
+    type: "flow",
+    label: "Vulnerability Scanner",
+    sublabel: "(Bandit, Semgrep)",
+    role: "8.1 System Design · Parallel Track A",
+    ip: "Static Code Vulnerability Track",
+    protocol: "Bandit (Python AST) · Semgrep CLI",
+    detail: "Detects eval(), exec(), risky functions & insecure practices",
+    documentation:
+      "Scans source code with Bandit and Semgrep CLI to identify dangerous functions (eval, exec), shell injection, hardcoded secrets, and insecure coding practices.",
+  },
+  "fl-pattern": {
+    id: "fl-pattern",
+    type: "flow",
+    label: "Pattern detection",
+    sublabel: "(YARA)",
+    role: "8.1 System Design · Parallel Track B",
+    ip: "Malware Signature Track",
+    protocol: "YARA Rules · ClamAV · GuardDog",
+    detail: "Matches known malicious patterns, droppers & obfuscated payloads",
+    documentation:
+      "Runs signature-based malware detection using custom YARA rules (plus ClamAV and GuardDog) to detect known malware families, obfuscated payloads, and supply-chain backdoors.",
+  },
+  "fl-meta": {
+    id: "fl-meta",
+    type: "flow",
+    label: "Metadata extractor",
+    sublabel: "(File, info, size, commit)",
+    role: "8.1 System Design · Parallel Track C",
+    ip: "Repository Feature Extractor",
+    protocol: "GitHub API · Pandas Feature Engineering",
+    detail: "Extracts file counts, file sizes, extensions & commit history",
+    documentation:
+      "Extracts structural repository features—including file types, file sizes, entropy, and commit metadata—for the machine-learning risk classifier.",
+  },
+  "fl-collect": {
+    id: "fl-collect",
+    type: "flow",
+    label: "Collect results",
+    role: "8.1 System Design · Step 11",
+    ip: "Result Aggregator",
+    protocol: "Pandas DataFrame Normalization",
+    detail: "Merges outputs from Vulnerability, Pattern & Metadata tracks",
+    documentation:
+      "Collects and normalizes all findings and extracted metadata from the three parallel analysis tracks into a unified structure.",
+  },
+  "fl-scoring": {
+    id: "fl-scoring",
+    type: "flow",
+    label: "Risk Scoring System",
+    role: "8.1 System Design · Step 12",
+    ip: "ML Risk Engine",
+    protocol: "Scikit-learn Classifier · Confidence Weighting",
+    detail: "Evaluates findings with trained ML model & severity weights",
+    documentation:
+      "Feeds the aggregated scan data into the Scikit-learn Random Forest classifier and applies custom severity weights (High×5, Medium×3, Low×1).",
+  },
+  "fl-calc": {
+    id: "fl-calc",
+    type: "flow",
+    label: "Calculate Final Risk",
+    role: "8.1 System Design · Step 13",
+    ip: "Threat Level Calculator",
+    protocol: "Safe · Low · Medium · High · Critical",
+    detail: "Computes final repository risk score & threat verdict",
+    documentation:
+      "Computes the final numeric risk score and assigns clear threat levels for Vulnerability and Malicious Pattern.",
+  },
+  "fl-store": {
+    id: "fl-store",
+    type: "flow",
+    label: "Store in DB",
+    role: "8.1 System Design · Step 14",
+    ip: "MySQL / SQLite Database",
+    protocol: "Persistent Scan Record & Cleanup",
+    detail: "Saves scan report in database & deletes temporary folder",
+    documentation:
+      "Persists the completed scan results, findings, and risk scores in the database and deletes the temporary repository directory.",
+  },
+  "fl-return": {
+    id: "fl-return",
+    type: "flow",
+    label: "Return result to web dashboard",
+    sublabel: "→ END",
+    role: "8.1 System Design · Step 15 (Output)",
+    ip: "http://103.233.1.97:5000/",
+    protocol: "Flask Dashboard & Visual Charts",
+    detail: "Renders risk score, code snippets & breakdown charts to user",
+    documentation:
+      "Returns the completed assessment to the web dashboard, showing all detected issues, exact file paths, line numbers, code snippets, and visual breakdown charts.",
+  },
+}
 
 const viewModeLabels: Record<TopologyViewMode, string> = {
-  physical: "Architecture Flow",
-  logical: "Triage Pipeline",
+  flowchart: "8.1 System Design (Flowchart)",
+  block: "8.2 Block Diagram",
+  physical: "8.3 Physical Network",
+  logical: "8.4 Logical Network",
 }
 
-function TopologyNodeButton({
-  node,
-  tipOpen,
-  onHover,
-  onOpen,
-  orientation = "vertical",
-  tipPlacement = "top",
-  mode = "physical",
+function DiagramDeviceIcon({ type }: { type: TopologyNodeSpec["type"] }) {
+  if (type === "laptop") {
+    return (
+      <svg viewBox="0 0 64 48" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="10" y="6" width="44" height="28" rx="2.5" fill="rgba(163, 217, 184, 0.1)" />
+        <path d="M4 34h56l-3 6H7l-3-6Z" fill="rgba(163, 217, 184, 0.18)" />
+        <line x1="27" y1="34" x2="37" y2="34" strokeWidth="3" />
+      </svg>
+    )
+  }
+  if (type === "cloud") {
+    return (
+      <svg viewBox="0 0 64 48" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <path
+          d="M18 38h29a11 11 0 0 0 1.5-21.9A15 15 0 0 0 19.6 13 12.5 12.5 0 0 0 18 38Z"
+          fill="rgba(163, 217, 184, 0.14)"
+        />
+      </svg>
+    )
+  }
+  if (type === "router") {
+    return (
+      <svg viewBox="0 0 64 48" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="8" x2="18" y2="22" strokeWidth="3" />
+        <line x1="46" y1="8" x2="46" y2="22" strokeWidth="3" />
+        <rect x="8" y="22" width="48" height="16" rx="2.5" fill="rgba(163, 217, 184, 0.12)" />
+        <line x1="14" y1="27" x2="30" y2="27" />
+        <line x1="14" y1="33" x2="30" y2="33" />
+        <circle cx="38" cy="30" r="2" fill="currentColor" />
+        <circle cx="44" cy="30" r="2" fill="currentColor" />
+        <circle cx="50" cy="30" r="2" fill="currentColor" />
+        <line x1="14" y1="40" x2="20" y2="40" strokeWidth="3" />
+        <line x1="44" y1="40" x2="50" y2="40" strokeWidth="3" />
+      </svg>
+    )
+  }
+  return (
+    <svg viewBox="0 0 64 48" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="10" y="6" width="44" height="28" rx="2.5" fill="rgba(163, 217, 184, 0.1)" />
+      <path d="M4 34h56l-3 6H7l-3-6Z" fill="rgba(163, 217, 184, 0.18)" />
+      <path d="M22 16l5 4-5 4M30 24h8" />
+    </svg>
+  )
+}
+
+function VerticalArrowConnector({
+  label,
+  rightLabel,
+  height = 64,
 }: {
-  node: TopologyNodeSpec
-  tipOpen: boolean
-  onHover: (id: string | null) => void
-  onOpen: (id: string) => void
-  orientation?: "vertical" | "horizontal"
-  tipPlacement?: "top" | "bottom"
-  mode?: TopologyViewMode
+  label?: string
+  rightLabel?: string
+  height?: number
 }) {
   return (
-    <button
-      type="button"
-      className={`topo-node topo-node-${orientation} network-device network-device-${node.type}`}
-      onMouseEnter={() => onHover(node.id)}
-      onMouseLeave={() => onHover(null)}
-      onFocus={() => onHover(node.id)}
-      onBlur={() => onHover(null)}
-      onClick={() => onOpen(node.id)}
-      aria-haspopup="dialog"
-      aria-describedby={tipOpen ? `tip-${node.id}` : undefined}
-    >
-      <span className={`topo-node-icon topo-icon-${node.type}`} aria-hidden="true">
-        {node.type === "monitor" && (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-            <path d="M3 5.5A1.5 1.5 0 0 1 4.5 4h15A1.5 1.5 0 0 1 21 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 14.5z" />
-            <path d="M9 20h6M12 16.5V20" />
-            <path d="M7 8.5l2.5 2.5L7 13.5" />
-          </svg>
-        )}
-        {node.type === "switch" && (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-            <rect x="3" y="7" width="18" height="10" rx="1.5" />
-            <path d="M6.5 10.5v3M10 10.5v3M13.5 10.5v3M17 10.5v3" />
-          </svg>
-        )}
-        {node.type === "server" && (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-            <rect x="4" y="3.5" width="16" height="7" rx="1.5" />
-            <rect x="4" y="13.5" width="16" height="7" rx="1.5" />
-            <path d="M7.5 7h.01M7.5 17h.01M11 7h6M11 17h6" />
-          </svg>
-        )}
-        {node.type === "user" && (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-            <rect x="4" y="4" width="16" height="11" rx="1.5" />
-            <path d="M2.5 19h19M12 15v4" />
-          </svg>
-        )}
+    <div className="meth-v-connector" style={{ height: `${height}px` }} aria-hidden="true">
+      {label && <span className="meth-v-label meth-v-label-left">{label}</span>}
+      <span className="meth-v-line">
+        <i className="meth-v-particle" />
       </span>
-      <span className="topo-node-meta">
-        <strong>{node.label}</strong>
-        <span>{mode === "logical" ? node.protocol : node.ip}</span>
-        {mode === "logical" && (
-          <small className="topo-node-subdetail">{node.detail}</small>
-        )}
-      </span>
-      <span
-        className={`topo-tip topo-tip-${tipPlacement}`}
-        id={`tip-${node.id}`}
-        role="tooltip"
-        data-open={tipOpen ? "true" : undefined}
-      >
-        <strong>{node.label}</strong>
-        <span>{node.ip} · {node.protocol}</span>
-        <span className="topo-tip-role">{node.role}</span>
-        <em>Click for architecture details</em>
-      </span>
-    </button>
+      {rightLabel && <span className="meth-v-label meth-v-label-right">{rightLabel}</span>}
+    </div>
   )
 }
 
 function Topology() {
-  const [mode, setMode] = useState<TopologyViewMode>("physical")
+  const [mode, setMode] = useState<TopologyViewMode>("logical")
   const [activeNode, setActiveNode] = useState<string | null>(null)
-  const [hoverTip, setHoverTip] = useState<string | null>(null)
 
-  const activeSpec = topologyNodes.find((n) => n.id === activeNode) ?? null
-  const nodeSpec = (id: string) => topologyNodes.find((n) => n.id === id)!
+  const activeSpec = activeNode ? methodologySpecs[activeNode] ?? null : null
 
-  const branchEdges = [
-    {
-      id: "switch-server",
-      d: "M 450 0 L 450 44 L 150 44 L 150 96",
-      label: mode === "logical" ? "63,496 RAW ALERTS" : "FINDINGS",
-      lx: 290,
-      ly: 34,
-      duration: 2.6,
-    },
-    {
-      id: "switch-user1",
-      d: "M 450 0 L 450 96",
-      label: mode === "logical" ? "ML WEIGHTS" : "WEIGHTS",
-      lx: 462,
-      ly: 72,
-      duration: 2.0,
-    },
-    {
-      id: "switch-user2",
-      d: "M 450 0 L 450 44 L 750 44 L 750 96",
-      label: mode === "logical" ? "LOCKED VERDICTS" : "REPORT",
-      lx: 610,
-      ly: 34,
-      duration: 2.8,
-    },
-  ]
+  const renderFlowBox = (
+    id: string,
+    extraClass = "",
+    customContent?: React.ReactNode,
+  ) => {
+    const spec = methodologySpecs[id]
+    if (!spec) return null
+    return (
+      <button
+        key={id}
+        type="button"
+        className={`meth-flow-node meth-flow-${spec.type} ${extraClass}`}
+        onClick={() => setActiveNode(id)}
+        aria-haspopup="dialog"
+      >
+        {customContent ?? (
+          <>
+            <strong>{spec.label}</strong>
+            {spec.sublabel && <span>{spec.sublabel}</span>}
+          </>
+        )}
+      </button>
+    )
+  }
 
   return (
     <div className={`topology-wrap topo-mode-${mode}`}>
-      <div className="topo-mode-toggle" role="tablist" aria-label="Architecture view mode">
+      <div className="topo-mode-toggle" role="tablist" aria-label="Section 8.0 Project Methodology Diagrams">
         {(Object.keys(viewModeLabels) as TopologyViewMode[]).map((m) => (
           <button
             key={m}
@@ -1433,145 +1742,371 @@ function Topology() {
         ))}
       </div>
 
-      <div
-        className="logical-topology"
-        role="img"
-        aria-label="MalDet scanning architecture: GitHub repository target feeds into the MalDet Orchestrator, which coordinates the Random Forest Classifier, Dual-Axis Trust Scorer, and Local LLM & Web Console"
-      >
-        <div className="logical-node logical-node-pc">
-          <TopologyNodeButton
-            node={nodeSpec("pc")}
-            tipOpen={hoverTip === "pc"}
-            onHover={setHoverTip}
-            onOpen={setActiveNode}
-            orientation="horizontal"
-            tipPlacement="bottom"
-            mode={mode}
-          />
-        </div>
-
-        {/* Dedicated vertical connector between GitHub Target and Sandbox */}
-        <div className="topo-connector-vertical-wrap" aria-hidden="true">
-          <svg className="topo-connector-vertical" viewBox="0 0 240 68">
-            <defs>
-              <radialGradient id="topo-particle-top" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-                <stop offset="40%" stopColor="var(--color-primary)" stopOpacity="0.9" />
-                <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
-              </radialGradient>
-            </defs>
-            <path d="M 120 0 L 120 68" className="topo-edge-track" />
-            <path
-              d="M 120 0 L 120 68"
-              className="topo-edge-flow"
-              style={{ animationDuration: "2.2s" }}
-            />
-            <text x="132" y="38" className="topo-edge-label">
-              {mode === "logical" ? "SHALLOW ARCHIVE" : "CLONE"}
-            </text>
-            <g className="topo-particle-group">
-              <circle r="5" fill="url(#topo-particle-top)">
-                <animateMotion dur="2.2s" repeatCount="indefinite" path="M 120 0 L 120 68" />
-                <animate
-                  attributeName="opacity"
-                  values="0;1;1;0"
-                  keyTimes="0;0.1;0.9;1"
-                  dur="2.2s"
-                  repeatCount="indefinite"
-                />
-              </circle>
-            </g>
-          </svg>
-        </div>
-
-        <div className="logical-lan">
-          <span className="logical-lan-label">MalDet Sandbox &amp; Scoring Engine</span>
-
-          <div className="logical-node logical-node-switch">
-            <TopologyNodeButton
-              node={nodeSpec("switch")}
-              tipOpen={hoverTip === "switch"}
-              onHover={setHoverTip}
-              onOpen={setActiveNode}
-              orientation="horizontal"
-              tipPlacement="top"
-              mode={mode}
-            />
+      {/* ===== TAB 8.4: LOGICAL NETWORK DIAGRAM (Figure 12) ===== */}
+      {mode === "logical" && (
+        <div
+          className="meth-diagram-shell"
+          role="region"
+          aria-label="8.4 Logical Network Diagram (Figure 12)"
+        >
+          <div className="meth-diagram-header">
+            <span className="meth-figure-tag">8.4 Logical Network Diagram · Figure 12</span>
+            <span className="meth-click-hint">Click any network component to inspect specifications</span>
           </div>
 
-          {/* Dedicated 3-way branch connector between Orchestrator and the 3 bottom engines */}
-          <div className="topo-connector-branch-wrap" aria-hidden="true">
-            <svg className="topo-connector-branch" viewBox="0 0 900 96" preserveAspectRatio="none">
-              <defs>
-                <radialGradient id="topo-particle" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-                  <stop offset="40%" stopColor="var(--color-primary)" stopOpacity="0.9" />
-                  <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
-                </radialGradient>
-              </defs>
-              {branchEdges.map((edge) => (
-                <g key={edge.id}>
-                  <path d={edge.d} className="topo-edge-track" />
-                  <path
-                    d={edge.d}
-                    className="topo-edge-flow"
-                    style={{ animationDuration: `${edge.duration}s` }}
-                  />
-                  <text
-                    x={edge.lx}
-                    y={edge.ly}
-                    textAnchor={edge.id === "switch-user1" ? "start" : "middle"}
-                    className="topo-edge-label"
+          <div className="meth-net-frame">
+            {/* WAN ZONE */}
+            <div className="meth-zone-box">
+              <span className="meth-zone-title">WAN</span>
+
+              <div className="meth-net-center">
+                <button
+                  type="button"
+                  className="meth-device-btn"
+                  onClick={() => setActiveNode("net-client")}
+                >
+                  <span className="meth-device-icon">
+                    <DiagramDeviceIcon type="laptop" />
+                  </span>
+                  <span className="meth-device-text">
+                    <strong>Client Device</strong>
+                    <span>HTTPS / Port 443 Initiator</span>
+                  </span>
+                </button>
+
+                <VerticalArrowConnector label="HTTPS / Port 443" height={68} />
+
+                <button
+                  type="button"
+                  className="meth-device-btn"
+                  onClick={() => setActiveNode("net-cloudflare")}
+                >
+                  <span className="meth-device-icon">
+                    <DiagramDeviceIcon type="cloud" />
+                  </span>
+                  <span className="meth-device-text">
+                    <strong>CloudFlare Edge Network</strong>
+                    <span>Global Reverse Proxy &amp; DNS</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Cross-Zone Tunnel Line */}
+            <VerticalArrowConnector
+              rightLabel="Outbound Secure Tunnel (Port 7844 / HTTPS)"
+              height={64}
+            />
+
+            {/* LAN ZONE */}
+            <div className="meth-zone-box">
+              <span className="meth-zone-title">LAN</span>
+
+              <div className="meth-net-center">
+                <button
+                  type="button"
+                  className="meth-device-btn meth-device-btn-wide"
+                  onClick={() => setActiveNode("net-router")}
+                >
+                  <span className="meth-device-callout">
+                    <span>Public IP (CGNAT/Dynamic IP) : 14.192.x.x</span>
+                    <span>Net Addr : 192.168.1.0/24</span>
+                  </span>
+                  <span className="meth-device-icon">
+                    <DiagramDeviceIcon type="router" />
+                  </span>
+                  <span className="meth-device-text">
+                    <strong>Network Router</strong>
+                    <span>Local Subnet Gateway</span>
+                  </span>
+                </button>
+
+                <VerticalArrowConnector label="Local Subnet (192.168.1.0/24)" height={64} />
+
+                <button
+                  type="button"
+                  className="meth-device-btn meth-device-btn-wide"
+                  onClick={() => setActiveNode("net-host")}
+                >
+                  <span className="meth-device-callout">
+                    <span>192.168.1.10</span>
+                    <span>cloudflared</span>
+                  </span>
+                  <span className="meth-device-icon">
+                    <DiagramDeviceIcon type="server" />
+                  </span>
+                  <span className="meth-device-text">
+                    <strong>Web Hosting Machine</strong>
+                    <span>Core App &amp; cloudflared Daemon</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="meth-figure-caption">
+            <strong>Figure 12: Logical Network Diagram</strong>
+            <p>
+              The internal server hosts the core application and runs the <code>cloudflared</code>{" "}
+              daemon, which establishes and maintains the secure outbound connection (Port 7844 /
+              HTTPS) to the outside world. The Network Router serves as the gateway for the local
+              subnet (<code>192.168.1.0/24</code>). Because of the tunnel architecture, the public
+              IP (<code>14.192.x.x</code>) assigned to this router—even if dynamic or behind
+              CGNAT—does not need to accept inbound connections from the internet. CloudFlare Edge
+              Network acts as a secure intermediary and reverse proxy for external users connecting
+              over HTTPS / Port 443.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ===== TAB 8.3: PHYSICAL NETWORK DIAGRAM (Figure 11) ===== */}
+      {mode === "physical" && (
+        <div
+          className="meth-diagram-shell"
+          role="region"
+          aria-label="8.3 Physical Network Diagram (Figure 11)"
+        >
+          <div className="meth-diagram-header">
+            <span className="meth-figure-tag">8.3 Physical Network Diagram · Figure 11</span>
+            <span className="meth-click-hint">Click any hardware block to inspect specifications</span>
+          </div>
+
+          <div className="meth-zone-box meth-physical-box">
+            <div className="meth-net-center">
+              <button
+                type="button"
+                className="meth-device-btn"
+                onClick={() => setActiveNode("net-client")}
+              >
+                <span className="meth-device-icon">
+                  <DiagramDeviceIcon type="laptop" />
+                </span>
+                <span className="meth-device-text">
+                  <strong>Client Device</strong>
+                  <span>Intel i5 (10th Gen+) / Ryzen 5 · 8GB RAM</span>
+                </span>
+              </button>
+
+              <VerticalArrowConnector
+                label="Outside Network"
+                rightLabel="CloudFlare Edge Network (Internet)"
+                height={88}
+              />
+
+              <button
+                type="button"
+                className="meth-device-btn"
+                onClick={() => setActiveNode("net-router")}
+              >
+                <span className="meth-device-icon">
+                  <DiagramDeviceIcon type="router" />
+                </span>
+                <span className="meth-device-text">
+                  <strong>Network Router</strong>
+                  <span>Wi-Fi / LAN Gateway Connection</span>
+                </span>
+              </button>
+
+              <VerticalArrowConnector label="Local Network Link" height={88} />
+
+              <button
+                type="button"
+                className="meth-device-btn"
+                onClick={() => setActiveNode("net-host")}
+              >
+                <span className="meth-device-icon">
+                  <DiagramDeviceIcon type="server" />
+                </span>
+                <span className="meth-device-text">
+                  <strong>Web Hosting Machine</strong>
+                  <span>Ubuntu OS in VMware · 16GB RAM · 512GB SSD · CUDA GPU</span>
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <div className="meth-figure-caption">
+            <strong>Figure 11: Physical Network Diagram</strong>
+            <p>
+              The project consists of three physical network blocks: the Client Device, CloudFlare
+              Edge Network (outside internet), Network Router, and Web Hosting Machine. The host
+              machine runs Ubuntu Linux OS inside VMware/VirtualBox. Website traffic is routed
+              through the CloudFlare Edge Network so clients can securely access the domain from the
+              internet.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ===== TAB 8.2: BLOCK DIAGRAM (Figure 10) ===== */}
+      {mode === "block" && (
+        <div
+          className="meth-diagram-shell"
+          role="region"
+          aria-label="8.2 Block Diagram (Figure 10)"
+        >
+          <div className="meth-diagram-header">
+            <span className="meth-figure-tag">8.2 Block Diagram · Figure 10</span>
+            <span className="meth-click-hint">Click any architectural block to view details</span>
+          </div>
+
+          <div className="meth-block-stack">
+            {[
+              "blk-github",
+              "blk-scheduler",
+              "blk-queue",
+              "blk-static",
+              "blk-ml",
+              "blk-db",
+              "blk-dashboard",
+            ].map((id, idx, arr) => {
+              const spec = methodologySpecs[id]
+              return (
+                <div key={id} className="meth-block-step">
+                  <button
+                    type="button"
+                    className="meth-block-card"
+                    onClick={() => setActiveNode(id)}
                   >
-                    {edge.label}
-                  </text>
-                </g>
-              ))}
-              <g className="topo-particle-group">
-                {branchEdges.map((edge) => (
-                  <circle key={`p-${edge.id}`} r="5" fill="url(#topo-particle)">
-                    <animateMotion dur={`${edge.duration}s`} repeatCount="indefinite" path={edge.d} />
-                    <animate
-                      attributeName="opacity"
-                      values="0;1;1;0"
-                      keyTimes="0;0.08;0.92;1"
-                      dur={`${edge.duration}s`}
-                      repeatCount="indefinite"
-                    />
-                  </circle>
-                ))}
-              </g>
-            </svg>
+                    <span className="meth-block-num">{String(idx + 1).padStart(2, "0")}</span>
+                    <span className="meth-block-copy">
+                      <strong>{spec.label}</strong>
+                      <span>{spec.sublabel}</span>
+                    </span>
+                    <span className="meth-block-arrow" aria-hidden="true">
+                      Info →
+                    </span>
+                  </button>
+                  {idx < arr.length - 1 && <VerticalArrowConnector height={38} />}
+                </div>
+              )
+            })}
           </div>
 
-          <div className="logical-grid">
-            <TopologyNodeButton
-              node={nodeSpec("server")}
-              tipOpen={hoverTip === "server"}
-              onHover={setHoverTip}
-              onOpen={setActiveNode}
-              tipPlacement="top"
-              mode={mode}
-            />
-            <TopologyNodeButton
-              node={nodeSpec("user1")}
-              tipOpen={hoverTip === "user1"}
-              onHover={setHoverTip}
-              onOpen={setActiveNode}
-              tipPlacement="top"
-              mode={mode}
-            />
-            <TopologyNodeButton
-              node={nodeSpec("user2")}
-              tipOpen={hoverTip === "user2"}
-              onHover={setHoverTip}
-              onOpen={setActiveNode}
-              tipPlacement="top"
-              mode={mode}
-            />
+          <div className="meth-figure-caption">
+            <strong>Figure 10: Block Diagram</strong>
+            <p>
+              End-to-end modular architecture of MalDet: repository data is ingested from the{" "}
+              <strong>GitHub API</strong>, coordinated by the <strong>Auto Scheduler</strong> and{" "}
+              <strong>Queue Manager</strong>, inspected by the <strong>Static Analysis</strong>{" "}
+              engines, evaluated by the <strong>ML Risk Engine</strong>, persisted in the{" "}
+              <strong>Database</strong>, and presented on the <strong>Dashboard / Report</strong>.
+            </p>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* ===== TAB 8.1: SYSTEM DESIGN FLOWCHART (Figure 9) ===== */}
+      {mode === "flowchart" && (
+        <div
+          className="meth-diagram-shell"
+          role="region"
+          aria-label="8.1 System Design Flowchart (Figure 9)"
+        >
+          <div className="meth-diagram-header">
+            <span className="meth-figure-tag">8.0 Project Methodology · 8.1 System Design (Figure 9: Flowchart)</span>
+            <span className="meth-click-hint">Click any flowchart step to inspect its logic</span>
+          </div>
+
+          <div className="meth-flowchart">
+            {/* Row 1: START -> User enter web dashboard -> Enter malware scanner section */}
+            <div className="meth-flow-row meth-flow-row-3">
+              {renderFlowBox("fl-start")}
+              <span className="meth-h-arrow" aria-hidden="true">→</span>
+              {renderFlowBox("fl-dashboard")}
+              <span className="meth-h-arrow" aria-hidden="true">→</span>
+              {renderFlowBox("fl-scanner-sec")}
+            </div>
+
+            <VerticalArrowConnector height={34} />
+
+            {/* Row 2: Enter repositories URL -> Scan and validate repo -> Add repo to scan queue */}
+            <div className="meth-flow-row meth-flow-row-3">
+              {renderFlowBox("fl-input-url", "meth-flow-parallelogram")}
+              <span className="meth-h-arrow" aria-hidden="true">→</span>
+              {renderFlowBox("fl-validate")}
+              <span className="meth-h-arrow" aria-hidden="true">→</span>
+              {renderFlowBox("fl-queue")}
+            </div>
+
+            <VerticalArrowConnector height={34} />
+
+            {/* Row 3: Check system resource limits */}
+            <div className="meth-flow-row">
+              {renderFlowBox("fl-limits")}
+            </div>
+
+            <VerticalArrowConnector height={34} />
+
+            {/* Row 4: Wait <-- (No) -- [is load < threshold?] -- (Yes) --> Dequeue repo -> Create temporary folder -> Clone repo */}
+            <div className="meth-flow-row meth-flow-row-decision">
+              {renderFlowBox("fl-wait", "meth-flow-wait")}
+              <span className="meth-h-arrow meth-h-arrow-label" aria-hidden="true">
+                ← <em>No</em>
+              </span>
+              {renderFlowBox("fl-threshold")}
+              <span className="meth-h-arrow meth-h-arrow-label" aria-hidden="true">
+                <em>Yes</em> →
+              </span>
+              {renderFlowBox("fl-dequeue")}
+              <span className="meth-h-arrow" aria-hidden="true">→</span>
+              {renderFlowBox("fl-temp")}
+              <span className="meth-h-arrow" aria-hidden="true">→</span>
+              {renderFlowBox("fl-clone")}
+            </div>
+
+            <VerticalArrowConnector height={34} />
+
+            {/* Row 5: Static Analysis Scanner begin */}
+            <div className="meth-flow-row">
+              {renderFlowBox("fl-static-begin", "meth-flow-highlight")}
+            </div>
+
+            <VerticalArrowConnector label="Parallel Static Engines" height={38} />
+
+            {/* Row 6: 3 Parallel Scanners */}
+            <div className="meth-flow-parallel-grid">
+              {renderFlowBox("fl-vuln")}
+              {renderFlowBox("fl-pattern")}
+              {renderFlowBox("fl-meta")}
+            </div>
+
+            <VerticalArrowConnector label="Merge Outputs" height={38} />
+
+            {/* Row 7: Collect results -> Risk Scoring System */}
+            <div className="meth-flow-row meth-flow-row-2">
+              {renderFlowBox("fl-collect")}
+              <span className="meth-h-arrow" aria-hidden="true">→</span>
+              {renderFlowBox("fl-scoring", "meth-flow-highlight")}
+            </div>
+
+            <VerticalArrowConnector height={34} />
+
+            {/* Row 8: Calculate Final Risk -> Store in DB -> Return result to web dashboard -> END */}
+            <div className="meth-flow-row meth-flow-row-4">
+              {renderFlowBox("fl-calc")}
+              <span className="meth-h-arrow" aria-hidden="true">→</span>
+              {renderFlowBox("fl-store")}
+              <span className="meth-h-arrow" aria-hidden="true">→</span>
+              {renderFlowBox("fl-return")}
+              <span className="meth-h-arrow" aria-hidden="true">→</span>
+              {renderFlowBox("fl-start", "meth-flow-oval-end", <strong>END</strong>)}
+            </div>
+          </div>
+
+          <div className="meth-figure-caption">
+            <strong>Figure 9: System Design Flowchart (Section 8.1)</strong>
+            <p>
+              Complete execution workflow from user URL ingestion and queue validation through the{" "}
+              <strong>system resource threshold gate</strong>, temporary sandbox cloning, parallel{" "}
+              <strong>Vulnerability (Bandit, Semgrep)</strong>, <strong>Pattern (YARA)</strong>, and{" "}
+              <strong>Metadata</strong> extraction, <strong>ML Risk Scoring</strong>, database
+              persistence, and dashboard visualization.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div
         className={`topo-drawer ${activeSpec ? "topo-drawer-open" : ""}`}
@@ -1594,11 +2129,11 @@ function Topology() {
             <h3>{activeSpec.label}</h3>
             <dl className="topo-spec-list">
               <div>
-                <dt>Endpoint / Component</dt>
+                <dt>Component / Address</dt>
                 <dd>{activeSpec.ip}</dd>
               </div>
               <div>
-                <dt>Technology</dt>
+                <dt>Protocol / Stack</dt>
                 <dd>{activeSpec.protocol}</dd>
               </div>
               <div>
@@ -1905,13 +2440,13 @@ function DocumentationPage({
         <div className="content-shell">
           <Reveal>
             <SectionHeading
-              eyebrow="Interactive system architecture"
+              eyebrow="Section 8.0 · Interactive system architecture"
               title={
                 <>
-                  Multi-Engine & ML <em>Triage Architecture</em>
+                  Project Methodology & <em>System Architecture</em>
                 </>
               }
-              description="Click any node below to inspect how MalDet ingests GitHub repositories, orchestrates six static engines, filters noise with Random Forest, and publishes dual verdicts."
+              description="Explore the four official engineering diagrams from Section 8.0 of the GMI Final Year Project report (8.1 System Design Flowchart, 8.2 Block Diagram, 8.3 Physical Network, and 8.4 Logical Network). Click any block or node to inspect its specifications."
             />
           </Reveal>
           <Reveal delay={100}>
