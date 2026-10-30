@@ -22,19 +22,19 @@ const problemCards = [
     number: "01",
     title: "Lack of User-Friendly Security Tools",
     description:
-      "Lack of user-friendly tools that provide clear and accessible security assessments for developers.",
+      "Lack of user-friendly tools that provide clear and accessible security assessments for developers. Most existing security scanners are CLI-only utilities that output overwhelming raw logs, forcing developers to interpret complex vulnerability and malware alerts without a unified visual interface.",
   },
   {
     number: "02",
     title: "Undetected Pre-Execution Malware",
     description:
-      "Developers lack effective tools to detect malicious code embedded in open-source repositories prior to execution.",
+      "Developers lack effective tools to detect malicious code embedded in open-source repositories prior to execution. Attackers frequently conceal trojans, obfuscated payloads, typosquatted dependencies, and malicious install-time hooks inside public repositories and password-protected archives.",
   },
   {
     number: "03",
     title: "Manual & Time-Consuming Code Analysis",
     description:
-      "Analysing source code to identify malicious behaviour requires significant manual effort and is time-consuming.",
+      "Analysing source code to identify malicious behaviour requires significant manual effort and is time-consuming. Auditing thousands of files across multiple languages, dependencies, and nested archives by hand—and separating true threats from false-positive scanner noise—slows down development.",
   },
 ]
 
@@ -43,19 +43,19 @@ const solutions = [
     number: "01",
     title: "Web-Based Security Dashboard",
     description:
-      "To design a web-based dashboard for developers to access repository security assessments.",
+      "To design a web-based dashboard for developers to access repository security assessments. Provides a clean, zero-configuration web interface where users paste any public GitHub URL, track live scan progress, filter findings, and audit historical reports in one centralized ledger.",
   },
   {
     number: "02",
     title: "Malicious Code Detection Tool",
     description:
-      "To develop a tool for malicious code detection in public GitHub repositories.",
+      "To develop a tool for malicious code detection in public GitHub repositories. Orchestrates six static analysis engines (Bandit, Semgrep, pip-audit, YARA, ClamAV, GuardDog) plus a custom Dependency Checker and Random Forest classifier to detect threats statically without executing untrusted code.",
   },
   {
     number: "03",
     title: "Risk Scoring & LLM Summary",
     description:
-      "To implement a risk scoring system to evaluate repository threat levels, paired with a local LLM summary that explains key findings in plain English.",
+      "To implement a risk scoring system to evaluate repository threat levels, paired with a local LLM summary that explains key findings in plain English. Computes separated Vulnerability and Malicious-Pattern verdicts (Safe to Critical) deterministically before the local LLM summarizes the top risks.",
   },
 ]
 
