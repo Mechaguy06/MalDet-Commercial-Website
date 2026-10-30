@@ -2013,7 +2013,7 @@ function TeamCard({
           {member.role}
         </p>
         {member.blurb && <p style={{ marginTop: "0.45rem" }}>{member.blurb}</p>}
-        {!member.photo && <span className="team-photo-placeholder">Photo slot ready</span>}
+        {null}
         {member.email && (
           <a className="team-email-link" href={`mailto:${member.email}`}>
             {member.email}
@@ -2252,7 +2252,7 @@ function ContactPage() {
                 Browse Live Scan History
               </ActionButton>
             </div>
-            <div className="privacy-note">
+            <div className="privacy-note" hidden>
               <span aria-hidden="true">i</span>
               <p>
                 Team member photos and extended project documentation slots are

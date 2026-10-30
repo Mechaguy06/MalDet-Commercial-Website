@@ -4660,3 +4660,8 @@ a.action-button {
   justify-content: center;
   gap: 0.9rem;
 }
+
+
+.privacy-note[hidden] {
+  display: none !important;
+}
