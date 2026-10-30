@@ -251,6 +251,7 @@ const team = [
     name: "Ariff",
     role: "Project Team Member · Security & Detection Engines",
     blurb: "Responsible for static analysis tool integration, rule tuning, and vulnerability scoring.",
+    photo: "/assets/ariff.jpg",
   },
   {
     initials: "AL",
@@ -1990,10 +1991,10 @@ function TeamCard({
       delay={index * 70}
     >
       <div
-        className="team-avatar"
+        className={`team-avatar ${member.photo ? "team-avatar-photo" : ""}`}
         aria-label={`${member.name} initial-based avatar`}
       >
-        <span>{member.initials}</span>
+        {member.photo ? <img src={member.photo} alt={member.name} loading="lazy" /> : <span>{member.initials}</span>}
       </div>
       <div className="team-card-copy">
         {member.supervisor && (
@@ -2004,7 +2005,7 @@ function TeamCard({
           {member.role}
         </p>
         {member.blurb && <p style={{ marginTop: "0.45rem" }}>{member.blurb}</p>}
-        <span className="team-photo-placeholder">
+        <span className="team-photo-placeholder" hidden={Boolean(member.photo)}>
           Photo & full bio slot ready
         </span>
         {member.github && (

@@ -4549,3 +4549,18 @@ a.action-button {
     margin-top: var(--space-5);
   }
 }
+
+
+/* Team member portrait photo styling */
+.team-avatar-photo {
+  overflow: hidden;
+  padding: 0;
+}
+
+.team-avatar-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 18%;
+  display: block;
+}
