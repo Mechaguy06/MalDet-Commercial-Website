@@ -41,21 +41,21 @@ const problemCards = [
 const solutions = [
   {
     number: "01",
-    title: "Six-Engine Static & Supply-Chain Orchestration",
+    title: "Web-Based Security Dashboard",
     description:
-      "Automatically clones public repositories, unpacks nested and password-protected archives, and runs Bandit, Semgrep, pip-audit, YARA, ClamAV, GuardDog, and a custom Dependency Checker without executing untrusted code.",
+      "To design a web-based dashboard for developers to access repository security assessments.",
   },
   {
     number: "02",
-    title: "ML-Powered Noise Triage (Random Forest)",
+    title: "Malicious Code Detection Tool",
     description:
-      "A trained Random Forest risk classifier evaluates every raw finding and assigns a confidence probability that the alert is genuine—weighting real threats heavily while filtering out false-positive noise.",
+      "To develop a tool for malicious code detection in public GitHub repositories.",
   },
   {
     number: "03",
-    title: "Dual-Axis Verdicts & Plain-English Insight",
+    title: "Risk Scoring & LLM Summary",
     description:
-      "Separates security risk into two clear verdicts—Vulnerability and Malicious Pattern (scored Safe to Critical)—paired with a local LLM summary that explains the top findings in plain English without altering the deterministic score.",
+      "To implement a risk scoring system to evaluate repository threat levels, paired with a local LLM summary that explains key findings in plain English.",
   },
 ]
 
@@ -1158,7 +1158,7 @@ function AboutPage({ onNavigate }: { onNavigate: (page: Page) => void }) {
               eyebrow="Our architecture & objectives"
               title={
                 <>
-                  The MalDet <em>Solution</em>
+                  Project <em>Objectives</em>
                 </>
               }
               description="How MalDet transforms noisy multi-scanner output into clear, separated trust verdicts."
