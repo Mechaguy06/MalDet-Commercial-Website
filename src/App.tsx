@@ -20,21 +20,21 @@ const navigation: NavigationItem[] = [
 const problemCards = [
   {
     number: "01",
-    title: "Blind Trust in Public Repositories",
+    title: "Lack of User-Friendly Security Tools",
     description:
-      "Developers clone, install, and depend on public GitHub repositories every day without inspecting the source code. Attackers exploit this by hiding malware inside packages, compressed archives, and install-time hooks.",
+      "Lack of user-friendly tools that provide clear and accessible security assessments for developers.",
   },
   {
     number: "02",
-    title: "Fragmented Tools & Alert Fatigue",
+    title: "Undetected Pre-Execution Malware",
     description:
-      "Running six different static and supply-chain scanners manually requires reconciling incompatible output formats and wading through tens of thousands of unprioritized, noisy alerts.",
+      "Developers lack effective tools to detect malicious code embedded in open-source repositories prior to execution.",
   },
   {
     number: "03",
-    title: "Conflating Bugs with Deliberate Malware",
+    title: "Manual & Time-Consuming Code Analysis",
     description:
-      "Traditional scanners lump accidental coding vulnerabilities together with deliberate backdoors and supply-chain attacks—even though a careless bug and an active trojan demand completely different responses.",
+      "Analysing source code to identify malicious behaviour requires significant manual effort and is time-consuming.",
   },
 ]
 
