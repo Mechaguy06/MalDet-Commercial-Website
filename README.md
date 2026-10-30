@@ -7,14 +7,14 @@
 > **Development of an AI-Driven Malware Detection and Trust Scoring System for GitHub Repositories (MalDet)**  
 > Final Year Project · Diploma in Cyber Security Technology · German-Malaysian Institute (GMI) · 2026
 
-A standalone React 19 + Vite 8 + TypeScript + Tailwind CSS v4 commercial showcase website for **MalDet**, featuring three hash-routed pages (`Overview`, `How It Works & Tools`, and `About Us & Team`) and direct links to the live MalDet scanner at **[http://103.233.1.97:5000/](http://103.233.1.97:5000/)**.
+A standalone React 19 + Vite 8 + TypeScript + Tailwind CSS v4 commercial showcase website for **MalDet**, featuring three hash-routed pages (`Overview`, `How It Works & Tools`, and `About Us & Team`) and direct links to the live MalDet scanner at **[https://maldet-fyp.my/](https://maldet-fyp.my/)**.
 
 ---
 
 ## Live Links
 
-- **Live MalDet Scanner Application**: [http://103.233.1.97:5000/](http://103.233.1.97:5000/)
-- **Live Scan History Ledger**: [http://103.233.1.97:5000/history](http://103.233.1.97:5000/history)
+- **Live MalDet Scanner Application**: [https://maldet-fyp.my/](https://maldet-fyp.my/)
+- **Live Scan History Ledger**: [https://maldet-fyp.my/history](https://maldet-fyp.my/history)
 - **GitHub Repository**: [https://github.com/Mechaguy06/MalDet-Commercial-Website](https://github.com/Mechaguy06/MalDet-Commercial-Website)
 
 ---
