@@ -2233,20 +2233,23 @@ function ContactPage() {
       <MarqueeBand />
 
       <section className="inquiries-section section-pad">
-        <div className="content-shell inquiry-layout">
+        <div className="content-shell inquiry-expanded">
           <Reveal className="inquiry-copy">
-            <p className="eyebrow">Direct access & inquiries</p>
+            <p className="eyebrow">Direct platform access · Live web application</p>
             <h2>
-              Test MalDet Live or <em>Get in Touch</em>
+              Test MalDet <em>Live Right Now</em>
             </h2>
             <p>
               Want to see our AI-Driven Malware Detection and Trust Scoring
-              System in action? Open the live MalDet scanner directly or send
-              our team a message using the inquiry form.
+              System in action? Open the live MalDet scanner directly to inspect
+              any public GitHub repository with six static engines and ML triage.
             </p>
-            <div style={{ marginTop: "1.5rem" }}>
+            <div className="inquiry-expanded-actions" style={{ marginTop: "1.5rem" }}>
               <ActionButton variant="light" href={MALDET_URL}>
                 Launch MalDet Website ({MALDET_URL})
+              </ActionButton>
+              <ActionButton variant="secondary" href={`${MALDET_URL}history`}>
+                Browse Live Scan History
               </ActionButton>
             </div>
             <div className="privacy-note">
@@ -2258,7 +2261,7 @@ function ContactPage() {
             </div>
           </Reveal>
           <Reveal delay={100}>
-            <ContactForm />
+            {null}
           </Reveal>
         </div>
       </section>

@@ -4613,3 +4613,50 @@ a.action-button {
 :root[data-theme="dark"] .team-email-link {
   background: var(--color-lavender-mid);
 }
+
+
+/* Expanded full-width Test MalDet Live section (inquiry form removed) */
+.inquiry-expanded {
+  display: block;
+}
+
+.inquiry-expanded .inquiry-copy {
+  position: static;
+  max-width: 56rem;
+  margin-inline: auto;
+  padding: var(--space-7) var(--space-6);
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(163, 217, 184, 0.24);
+  background: rgba(5, 17, 12, 0.45);
+  box-shadow: var(--shadow-card), 0 0 2.5rem var(--color-glow);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.inquiry-expanded .inquiry-copy .eyebrow {
+  justify-content: center;
+}
+
+.inquiry-expanded .inquiry-copy h2 {
+  font-size: clamp(2.1rem, 4.2vw, 3.2rem);
+}
+
+.inquiry-expanded .inquiry-copy p:not(.eyebrow) {
+  max-width: 44rem;
+  margin-inline: auto;
+}
+
+.inquiry-expanded .privacy-note {
+  max-width: 38rem;
+  margin-inline: auto;
+  text-align: left;
+}
+
+.inquiry-expanded-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.9rem;
+}
