@@ -238,13 +238,16 @@ const team = [
     role: "Project Supervisor",
     blurb: "Academic advisor guiding project methodology, cybersecurity architecture, and evaluation.",
     supervisor: true,
+    photo: "/assets/supervisor.jpg",
   },
   {
     initials: "HK",
     name: "Haikal",
     role: "Team Lead & Core System Architect",
     blurb: "Lead developer overseeing scanner orchestration, ML pipeline integration, and full-stack architecture.",
+    email: "haikalhakimi.zolkifly@student.gmi.edu.my",
     github: "https://github.com/Skidotus",
+    githubHandle: "@Skidotus",
   },
   {
     initials: "AR",
@@ -252,18 +255,23 @@ const team = [
     role: "Project Team Member · Security & Detection Engines",
     blurb: "Responsible for static analysis tool integration, rule tuning, and vulnerability scoring.",
     photo: "/assets/ariff.jpg",
+    email: "abdulariffaqil.abdulshukur@student.gmi.edu.my",
+    github: "https://github.com/Mechaguy06",
+    githubHandle: "@Mechaguy06",
   },
   {
     initials: "AL",
     name: "Aleena",
     role: "Project Team Member · AI Classifier & Data Triage",
     blurb: "Focused on dataset preparation, Random Forest model training, and false-positive noise reduction.",
+    email: "aleena.julailey@student.gmi.edu.my",
   },
   {
     initials: "AD",
     name: "Adam",
     role: "Project Team Member · Web Interface & Reporting",
     blurb: "Designed the forest-and-paper ledger interface, interactive report console, and scan history views.",
+    email: "adamakmal.mohdfaizal@student.gmi.edu.my",
   },
 ]
 
@@ -2005,7 +2013,13 @@ function TeamCard({
           {member.role}
         </p>
         {member.blurb && <p style={{ marginTop: "0.45rem" }}>{member.blurb}</p>}
-        <span className="team-photo-placeholder" hidden={Boolean(member.photo)}>
+        {!member.photo && <span className="team-photo-placeholder">Photo slot ready</span>}
+        {member.email && (
+          <a className="team-email-link" href={`mailto:${member.email}`}>
+            {member.email}
+          </a>
+        )}
+        <span hidden>
           Photo & full bio slot ready
         </span>
         {member.github && (
@@ -2021,7 +2035,7 @@ function TeamCard({
                 textDecoration: "none",
               }}
             >
-              GitHub (@Skidotus) ↗
+              GitHub ({member.githubHandle ?? "@GitHub"}) ↗
             </a>
           </div>
         )}

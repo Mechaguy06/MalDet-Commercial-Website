@@ -4564,3 +4564,52 @@ a.action-button {
   object-position: center 18%;
   display: block;
 }
+
+
+/* Fix vertical gap inside team cards and style email/GitHub links */
+.team-card:not(.team-card-supervisor) {
+  justify-content: flex-start;
+  gap: 1.1rem;
+  min-height: 0;
+}
+
+.team-card:not(.team-card-supervisor) .team-card-copy {
+  margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  width: 100%;
+}
+
+.team-card-supervisor .team-avatar {
+  width: 7.25rem;
+  height: 7.25rem;
+  border-color: rgba(163, 217, 184, 0.55);
+  background: #ffffff;
+}
+
+.team-email-link {
+  margin-top: 0.75rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-md);
+  background: var(--color-lavender-soft);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  line-height: 1.35;
+  text-decoration: none;
+  word-break: break-all;
+  max-width: 100%;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.team-email-link:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+:root[data-theme="dark"] .team-email-link {
+  background: var(--color-lavender-mid);
+}
