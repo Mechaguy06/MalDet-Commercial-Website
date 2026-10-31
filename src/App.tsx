@@ -245,6 +245,7 @@ const team = [
     name: "Haikal",
     role: "Team Lead & Core System Architect",
     blurb: "Lead developer overseeing scanner orchestration, ML pipeline integration, and full-stack architecture.",
+    photo: "/assets/haikal.jpg",
     email: "haikalhakimi.zolkifly@student.gmi.edu.my",
     github: "https://github.com/Skidotus",
     githubHandle: "@Skidotus",
@@ -264,6 +265,7 @@ const team = [
     name: "Aleena",
     role: "Project Team Member · AI Classifier & Data Triage",
     blurb: "Focused on dataset preparation, Random Forest model training, and false-positive noise reduction.",
+    photo: "/assets/aleena.jpg",
     email: "aleena.julailey@student.gmi.edu.my",
   },
   {
@@ -271,6 +273,7 @@ const team = [
     name: "Adam",
     role: "Project Team Member · Web Interface & Reporting",
     blurb: "Designed the forest-and-paper ledger interface, interactive report console, and scan history views.",
+    photo: "/assets/adam.jpg",
     email: "adamakmal.mohdfaizal@student.gmi.edu.my",
   },
 ]
