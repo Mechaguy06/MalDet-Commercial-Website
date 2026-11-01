@@ -4665,3 +4665,418 @@ a.action-button {
 .privacy-note[hidden] {
   display: none !important;
 }
+
+
+/* ==========================================================================
+   COMPREHENSIVE MOBILE VIEWPORT & SCREEN-FIT OPTIMIZATION
+   ========================================================================== */
+
+html,
+body,
+#root,
+.app-shell {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.browser-url,
+.ui-mockup-urlbar {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.academic-label {
+  display: inline-block;
+  max-width: 100%;
+  white-space: normal;
+  line-height: 1.45;
+}
+
+@media (max-width: 48rem) {
+  /* Compact vertical rhythm so sections fit mobile screens naturally */
+  .section-pad {
+    padding-block: 3.25rem;
+  }
+
+  .content-shell,
+  .nav-shell {
+    width: calc(100% - 2rem);
+    max-width: 100%;
+  }
+
+  /* Header fit for narrow mobile screens */
+  .nav-shell {
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .maldet-brand {
+    font-size: 1.08rem;
+    gap: 0.45rem;
+  }
+
+  .maldet-brand-logo {
+    width: 2.15rem;
+    height: 2.15rem;
+  }
+
+  .site-header .maldet-brand-badge {
+    display: none;
+  }
+
+  .header-actions {
+    gap: 0.4rem;
+  }
+
+  .header-cta-link {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.76rem;
+    gap: 0.3rem;
+  }
+
+  .theme-toggle {
+    padding: 0;
+  }
+
+  .theme-toggle-track {
+    width: 3.35rem;
+    height: 1.9rem;
+  }
+
+  .theme-toggle-thumb {
+    width: 1.45rem;
+    height: 1.45rem;
+    left: 0.2rem;
+  }
+
+  [data-theme="dark"] .theme-toggle-thumb {
+    transform: translateY(-50%) translateX(1.5rem);
+  }
+
+  .menu-button {
+    width: 2.4rem;
+    height: 2.4rem;
+    padding: 0.55rem;
+  }
+
+  /* Hero section mobile fit */
+  .hero-section {
+    min-height: auto;
+  }
+
+  .hero-layout {
+    padding-block: 2rem 2.5rem;
+    gap: 1.75rem;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(2rem, 8vw, 2.75rem);
+    line-height: 1.18;
+  }
+
+  .hero-tagline {
+    font-size: 0.95rem;
+    padding: 0.4rem 0.65rem;
+    margin-top: 1rem;
+    max-width: 100%;
+  }
+
+  .hero-description,
+  .body-copy,
+  .section-description,
+  .interface-description {
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .hero-actions {
+    margin-top: 1.35rem;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .hero-actions .action-button,
+  .closing-panel .action-button,
+  .inquiry-expanded-actions .action-button {
+    width: 100%;
+    max-width: 100%;
+    white-space: normal;
+    text-align: center;
+    padding: 0.75rem 1rem;
+    font-size: 0.88rem;
+  }
+
+  .closing-panel > div:last-child,
+  .inquiry-expanded-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  /* Hero visual & report preview card mobile fit */
+  .hero-visual {
+    min-height: 0 !important;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    border-radius: var(--radius-xl);
+  }
+
+  .visual-caption {
+    position: static;
+    font-size: 0.72rem;
+    flex-wrap: wrap;
+    word-break: break-all;
+  }
+
+  .maldet-hero-card-bar {
+    padding: 0.7rem 0.9rem;
+    flex-wrap: wrap;
+    font-size: 0.7rem;
+  }
+
+  .maldet-hero-card-body {
+    padding: 1rem;
+  }
+
+  .maldet-repo-title {
+    font-size: 1.25rem;
+  }
+
+  .maldet-axis-score {
+    font-size: 1.7rem;
+  }
+
+  .maldet-triage-head {
+    flex-direction: column;
+    gap: 0.2rem;
+    font-size: 0.7rem;
+  }
+
+  .maldet-card-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  /* Stats & Process 2x2 grid on mobile */
+  .stats-section {
+    padding-block: 2rem;
+  }
+
+  .stat-value {
+    font-size: clamp(1.75rem, 6vw, 2.25rem);
+  }
+
+  .stat-label {
+    font-size: 0.78rem;
+  }
+
+  .process-visual {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .mini-step {
+    min-height: 5.5rem;
+    padding: 0.85rem;
+  }
+
+  .mini-step i {
+    display: none;
+  }
+
+  /* Feature, Problem, Objective, Workflow, and Tool Cards */
+  .feature-card,
+  .objective-card,
+  .workflow-step,
+  .tool-engine-card {
+    padding: 1.25rem;
+    min-height: 0;
+  }
+
+  .card-number,
+  .objective-icon {
+    margin-bottom: 1rem;
+  }
+
+  /* Documentation approval callout */
+  .approval-note {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding: 1.25rem;
+    margin-top: 2rem;
+  }
+
+  .approval-icon {
+    width: auto;
+  }
+
+  /* Interactive System Architecture mobile fit */
+  .topo-mode-toggle {
+    margin-bottom: 1.5rem;
+  }
+
+  .logical-node,
+  .logical-node-pc,
+  .logical-node-switch {
+    width: 100%;
+  }
+
+  .topo-connector-vertical {
+    width: 100%;
+    max-width: 14rem;
+    height: 2.75rem;
+  }
+
+  .logical-lan {
+    padding: 1.25rem 1rem;
+    margin-top: 0;
+    border-radius: var(--radius-lg);
+  }
+
+  .logical-lan-label {
+    position: static;
+    display: block;
+    margin-bottom: 1rem;
+    text-align: center;
+    font-size: 0.75rem;
+  }
+
+  .logical-grid {
+    gap: 0.85rem;
+    margin-top: 0.85rem;
+  }
+
+  .topo-node,
+  .topo-node-horizontal {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 0.85rem;
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: var(--color-white);
+  }
+
+  :root[data-theme="dark"] .topo-node,
+  :root[data-theme="dark"] .topo-node-horizontal {
+    background: var(--color-lavender-soft);
+  }
+
+  .topo-node-icon {
+    width: 3.1rem;
+    height: 3.1rem;
+    margin: 0 !important;
+    flex-shrink: 0;
+  }
+
+  .topo-node-meta,
+  .topo-node-horizontal .topo-node-meta {
+    align-items: flex-start !important;
+    text-align: left !important;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .topo-node-meta strong {
+    text-align: left;
+    font-size: 0.88rem;
+  }
+
+  .topo-node-subdetail {
+    max-width: 100%;
+  }
+
+  /* Hide hover tooltip on touch/mobile so tap opens the drawer cleanly */
+  .topo-tip {
+    display: none !important;
+  }
+
+  .topo-drawer {
+    width: 100%;
+    max-width: 100%;
+    padding: 1.5rem 1.25rem;
+  }
+
+  .topo-spec-list div {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .topo-spec-list dd {
+    text-align: left;
+  }
+
+  /* Interface Showcase & Browser Mockups */
+  .interfaces-shell {
+    gap: 3rem;
+  }
+
+  .interface-showcase + .interface-showcase {
+    padding-top: 3rem;
+  }
+
+  .ui-mockup-canvas {
+    padding: 1rem;
+    min-height: 0;
+    overflow-x: auto;
+  }
+
+  .ui-mockup-table th,
+  .ui-mockup-table td {
+    padding: 0.45rem 0.35rem;
+    font-size: 0.7rem;
+  }
+
+  .ui-mockup-table th:nth-child(2),
+  .ui-mockup-table td:nth-child(2) {
+    display: none;
+  }
+
+  .ui-mockup-table .maldet-seal {
+    padding: 0.15rem 0.45rem;
+    font-size: 0.62rem;
+  }
+
+  /* Team cards & Supervisor card mobile layout */
+  .team-card-supervisor {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1rem;
+    padding: 1.5rem 1.25rem;
+    min-height: 0;
+  }
+
+  .team-card-supervisor .team-card-copy {
+    margin-top: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .inquiry-expanded .inquiry-copy {
+    padding: 1.75rem 1.25rem;
+  }
+
+  .back-to-top {
+    right: 1rem;
+    bottom: 1rem;
+    width: 2.65rem;
+    height: 2.65rem;
+  }
+}
