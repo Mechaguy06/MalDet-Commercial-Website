@@ -5080,3 +5080,17 @@ body,
     height: 2.65rem;
   }
 }
+
+
+/* Fix .approval-icon fixed width causing <Brand /> badge to overlap paragraph text */
+.approval-note {
+  gap: 1.75rem;
+}
+
+.approval-icon {
+  width: auto !important;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+}
