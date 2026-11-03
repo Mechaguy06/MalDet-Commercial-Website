@@ -5117,7 +5117,7 @@ html:not(.js) .wf-reveal {
   transform: none !important;
 }
 
-/* ===== Hero: compact centred layout so buttons comfortably fit ===== */
+/* ===== Hero: balanced grand layout fitted precisely in the frame ===== */
 
 .hero-section {
   display: flex;
@@ -5131,8 +5131,8 @@ html:not(.js) .wf-reveal {
   justify-items: center;
   text-align: center;
   pointer-events: auto;
-  padding-top: clamp(3.75rem, 6vh, 4.85rem) !important;
-  padding-bottom: clamp(1rem, 2vh, 1.75rem);
+  padding-top: clamp(4rem, 7vh, 5.25rem) !important;
+  padding-bottom: clamp(1.5rem, 3.5vh, 2.5rem);
   gap: 0;
 }
 
@@ -5140,19 +5140,19 @@ html:not(.js) .wf-reveal {
   display: flex;
   flex-direction: column;
   align-items: center;
-  max-width: 50rem;
+  max-width: 58rem;
 }
 
 .hero-copy .eyebrow {
   justify-content: center;
-  margin-bottom: clamp(0.35rem, 0.8vh, 0.6rem);
-  font-size: clamp(0.68rem, 0.88vw, 0.78rem);
+  margin-bottom: clamp(0.5rem, 1vh, 0.85rem);
+  font-size: clamp(0.72rem, 0.95vw, 0.82rem);
 }
 
 .hero-section .hero-copy h1 {
-  max-width: 44rem;
+  max-width: 56rem;
   margin: 0;
-  font-size: clamp(1.85rem, 3.5vw, 3.15rem);
+  font-size: clamp(2.3rem, 4.4vw, 3.9rem);
   line-height: 1.08;
   letter-spacing: -0.035em;
   color: #ffffff;
@@ -5163,19 +5163,19 @@ html:not(.js) .wf-reveal {
   max-width: none;
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-top: clamp(0.45rem, 1.1vh, 0.75rem);
+  gap: 0.85rem;
+  margin-top: clamp(0.65rem, 1.4vh, 1.1rem);
   padding: 0;
   border-left: 0;
   text-align: center;
-  font-size: clamp(0.85rem, 1.15vw, 1.08rem);
-  line-height: 1.3;
+  font-size: clamp(0.95rem, 1.35vw, 1.25rem);
+  line-height: 1.35;
 }
 
 .hero-section .hero-tagline::before,
 .hero-section .hero-tagline::after {
   content: "";
-  width: 2rem;
+  width: 2.5rem;
   height: 1px;
   flex: none;
   background: linear-gradient(90deg, transparent, var(--color-primary));
@@ -5186,11 +5186,11 @@ html:not(.js) .wf-reveal {
 }
 
 .hero-section .hero-description {
-  max-width: 41rem;
-  margin-top: clamp(0.45rem, 1.1vh, 0.75rem);
+  max-width: 46rem;
+  margin-top: clamp(0.65rem, 1.4vh, 1.1rem);
   margin-inline: auto;
-  font-size: clamp(0.82rem, 1vw, 0.94rem);
-  line-height: 1.5;
+  font-size: clamp(0.88rem, 1.1vw, 1.04rem);
+  line-height: 1.58;
   color: rgba(255, 255, 255, 0.82);
 }
 
@@ -5199,21 +5199,21 @@ html:not(.js) .wf-reveal {
 }
 
 .hero-section .hero-actions {
-  margin-top: clamp(0.75rem, 1.6vh, 1.15rem);
-  gap: 0.75rem 1rem;
+  margin-top: clamp(1rem, 2vh, 1.5rem);
+  gap: 0.85rem 1.25rem;
   justify-content: center;
 }
 
 .hero-section .hero-actions .action-button {
-  padding: 0.6rem 1.35rem;
-  font-size: 0.9rem;
+  padding: 0.75rem 1.65rem;
+  font-size: 0.95rem;
 }
 
 .hero-scroll-hint {
   z-index: 10;
-  bottom: clamp(0.35rem, 1vh, 0.75rem);
-  font-size: 0.68rem;
-  opacity: 0.7;
+  bottom: clamp(0.4rem, 1.2vh, 0.95rem);
+  font-size: 0.7rem;
+  opacity: 0.75;
 }
 
 @media (max-width: 40rem) {
