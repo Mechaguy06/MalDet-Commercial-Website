@@ -1,41 +1,31 @@
-# figma-make-app
+# MalDet Commercial Website
 
-React + Vite + Tailwind CSS project running inside Figma Make.
+Astro 7 + React 19 islands + Tailwind CSS v4 marketing site (three static pages).
 
 ## Development Server
 
-A Vite development server is **already running** on `$PORT` (default 8443). You don't need to start it manually.
-
-- Preview URL: The user can access the running app through the preview panel
-- Hot reload: Changes to source files are reflected immediately
+A dev server may already be running on `$PORT` (default 4321 locally). Start it with `pnpm run dev` if not. Changes to source files hot reload.
 
 ## Project Structure
 
-This is the canonical project structure. Start with task-relevant files below. Only follow imports or inspect other files when required, when a documented path is missing, or when the repository contradicts this guide.
+- `src/pages/*.astro` - One file per route (`/`, `/documentation`, `/contact`); each mounts `SiteShell` with `client:load`
+- `src/layouts/BaseLayout.astro` - Document head, SEO meta, fonts and the pre-paint boot script (theme, preloader flag, legacy hash redirect)
+- `src/components/SiteShell.tsx` - React island: preloader, header, footer, smooth scroll and the active page view
+- `src/views/` - Page bodies; `src/components/{ui,layout,home,docs,contact}` - building blocks
+- `src/data/` - Navigation and all page content/data
+- `src/styles/main.css` - Tailwind v4 import plus `global.css` (all site styling and theme tokens)
+- `astro.config.mjs`, `tsconfig.json`, `package.json`, `.mise.toml` - Tooling (Node 22, pnpm)
 
-- `src/main.tsx` - React entrypoint; imports `src/index.css` and mounts `src/App.tsx` into the `#root` element
-- `src/App.tsx` - Primary application component and the usual starting point for UI work
-- `src/index.css` - Global CSS entrypoint and Tailwind CSS v4 import
-- `index.html` - Vite HTML shell containing the `#root` element and loading `src/main.tsx`
-- `package.json` - Project dependencies and the Vite build, development, preview, and formatting scripts
-- `vite.config.ts` - Vite configuration with React, Tailwind CSS v4, and Figma Make plugins plus the `@` alias for `src`
-- `.mise.toml` - Toolchain versions for Node.js and pnpm
+## Commands
 
-## Dependencies
-
-- Runtime: React 19 and React DOM 19
-- Styling: Tailwind CSS v4 with the `@tailwindcss/vite` plugin
-- Build tooling: Vite 8, TypeScript 5.7, and `@vitejs/plugin-react`
-- Formatting: oxfmt
-
-## Styling
-
-This project uses **Tailwind CSS v4** through the `@tailwindcss/vite` plugin configured in `vite.config.ts`. `src/index.css` imports Tailwind with `@import 'tailwindcss';`. Use Tailwind utility classes directly in JSX and put global CSS or Tailwind v4 theme customization in `src/index.css`. This scaffold does not need a Tailwind config file or PostCSS config.
-
-`src/main.tsx` imports `src/index.css`, so global font wiring belongs in `src/index.css`. Keep CSS `@import` statements first, then add any `@font-face` rules and font-family defaults there.
+- `pnpm run dev` - dev server
+- `pnpm run typecheck` - `astro sync` + `tsc --noEmit`
+- `pnpm run build` - static output to `dist/`
 
 ## Code quality
 
-- Use double quotes for strings containing apostrophes (`"We're here to help"`), or escape them in single-quoted strings. An unescaped apostrophe in a single-quoted string breaks the build.
-- Ensure JSX tags are closed and braces are balanced.
+- Components render on the server first: never touch `window`/`document`/storage during render, only inside effects or handlers, and keep first client render identical to server render.
+- Use double quotes for strings containing apostrophes, keep JSX tags closed and braces balanced.
 - Export components as default exports.
+- Tailwind utilities vs project tokens: `--color-white` is redefined in `global.css` (it is dark inside `.stage` bands), so `text-white`, `bg-white` and `border-white/…` do not give white. Use explicit values such as `text-[#ffffff]` or `border-[#ffffff1a]`. Unlayered rules in `global.css` also beat Tailwind utilities, so remove the old rule instead of fighting it.
+- Navigation uses real links (`<a href>`); add new pages under `src/pages/` and `src/data/navigation.ts`.

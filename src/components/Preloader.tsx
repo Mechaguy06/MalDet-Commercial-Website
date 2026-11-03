@@ -1,16 +1,6 @@
 import { useEffect, useState } from "react"
-import { prefersReducedMotion } from "@/lib/motion"
 
 const KEY = "maldet-preloaded"
-
-function shouldShow() {
-  if (typeof window === "undefined" || prefersReducedMotion()) return false
-  try {
-    return sessionStorage.getItem(KEY) !== "1"
-  } catch {
-    return true
-  }
-}
 
 const STREAKS = Array.from({ length: 22 }, (_, i) => ({
   left: `${(i * 47) % 100}%`,
@@ -19,26 +9,36 @@ const STREAKS = Array.from({ length: 22 }, (_, i) => ({
   opacity: 0.25 + ((i * 0.13) % 0.6),
 }))
 
-/** Brief "initialising" screen, shown once per session (never with reduced motion). */
+/**
+ * Brief "initialising" screen, shown once per session (never with reduced motion).
+ * The markup is always server-rendered; CSS keeps it hidden unless the head script
+ * set <html data-preload>, so server and client render the same tree.
+ */
 export default function Preloader() {
-  const [visible] = useState(shouldShow)
   const [done, setDone] = useState(false)
-  const [gone, setGone] = useState(!visible)
+  const [gone, setGone] = useState(false)
 
   useEffect(() => {
-    if (!visible) return
+    const root = document.documentElement
+    if (!root.hasAttribute("data-preload")) {
+      setGone(true)
+      return
+    }
     try {
       sessionStorage.setItem(KEY, "1")
     } catch {
       // Ignore: the loader just shows again next visit.
     }
     const finish = window.setTimeout(() => setDone(true), 1150)
-    const remove = window.setTimeout(() => setGone(true), 1800)
+    const remove = window.setTimeout(() => {
+      setGone(true)
+      root.removeAttribute("data-preload")
+    }, 1800)
     return () => {
       window.clearTimeout(finish)
       window.clearTimeout(remove)
     }
-  }, [visible])
+  }, [])
 
   if (gone) return null
 

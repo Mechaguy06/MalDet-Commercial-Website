@@ -1,0 +1,30 @@
+@import "tailwindcss";
+@import "./global.css";
+
+/* Ambient motion used by the pipeline section (Tailwind: animate-float-slow / animate-glow-pulse). */
+@theme {
+  --animate-float-slow: float-slow 9s ease-in-out infinite;
+  --animate-glow-pulse: glow-pulse 6s ease-in-out infinite;
+
+  @keyframes float-slow {
+    0%,
+    100% {
+      transform: translateY(0) scale(1);
+    }
+    50% {
+      transform: translateY(-14px) scale(1.02);
+    }
+  }
+
+  @keyframes glow-pulse {
+    0%,
+    100% {
+      opacity: 0.55;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.12);
+    }
+  }
+}

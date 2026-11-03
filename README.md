@@ -7,7 +7,7 @@
 > **Development of an AI-Driven Malware Detection and Trust Scoring System for GitHub Repositories (MalDet)**  
 > Final Year Project · Diploma in Cyber Security Technology · German-Malaysian Institute (GMI) · 2026
 
-A standalone React 19 + Vite 8 + TypeScript + Tailwind CSS v4 commercial showcase website for **MalDet**, featuring three hash-routed pages (`Overview`, `How It Works & Tools`, and `About Us & Team`) and direct links to the live MalDet scanner at **[https://maldet-fyp.my/](https://maldet-fyp.my/)**.
+A standalone Astro 7 + React 19 (islands) + TypeScript + Tailwind CSS v4 commercial showcase website for **MalDet**, featuring three statically generated pages (`Overview`, `How It Works & Tools`, and `About Us & Team`) and direct links to the live MalDet scanner at **[https://maldet-fyp.my/](https://maldet-fyp.my/)**.
 
 ---
 
@@ -21,12 +21,12 @@ A standalone React 19 + Vite 8 + TypeScript + Tailwind CSS v4 commercial showcas
 
 ## Website Structure (3 Pages)
 
-1. **Page 1 — `Overview` (`#/about`)**
-   - **Hero & Live Telemetry**: Full FYP title, direct scanner CTA, and a live preview card of Scan Report `#201` (`Skidotus/maldet`) showing separated **Vulnerability** and **Malicious-Pattern** risk gauges.
+1. **Page 1 — `Overview` (`/`)**
+   - **Hero**: Full FYP title, direct scanner CTA, over a Matrix digital-rain canvas background.
    - **Key Metrics**: `181+` repositories scanned, `63,496` findings analysed, `6` detection engines, and `2` clear risk verdicts.
    - **The Problem & The MalDet Solution**: Explains the supply-chain risks of blind trust in public repositories, alert fatigue across fragmented tools, and how MalDet solves them via static multi-engine orchestration and Random Forest triage.
 
-2. **Page 2 — `How It Works & Tools` (`#/documentation`)**
+2. **Page 2 — `How It Works & Tools` (`/documentation`)**
    - **4-Stage Scanning Workflow**: `01 Fetch & Unpack` → `02 Multi-Engine Detect` → `03 Random Forest Triage` → `04 Dual Verdict & Score`.
    - **The 8 Detection & Triage Components**:
      - *Vulnerability Axis*: **Bandit**, **Semgrep**, **pip-audit**
@@ -35,7 +35,7 @@ A standalone React 19 + Vite 8 + TypeScript + Tailwind CSS v4 commercial showcas
    - **Interactive Architecture Diagram**: Clickable node diagram illustrating data flow from the GitHub API to the MalDet Orchestrator, Random Forest Classifier, Dual-Axis Trust Scorer, and Local LLM & Web Console.
    - **User Interface Showcase**: Interactive browser mockups of the *One-Click Repository Scanner*, *Interactive Triage & Verdict Console*, and *Scan History & Verdict Ledger*.
 
-3. **Page 3 — `About Us & Team` (`#/contact`)**
+3. **Page 3 — `About Us & Team` (`/contact`)**
    - **Project Team**:
      - **Sir Luqman** — Project Supervisor
      - **Haikal** — Team Lead & Core System Architect (`@Skidotus`)
@@ -48,11 +48,11 @@ A standalone React 19 + Vite 8 + TypeScript + Tailwind CSS v4 commercial showcas
 
 ## Design & Theme System
 
- Shared design tokens and responsive styles live in `styles/global.css` and `src/index.css`, matching the exact aesthetic of the MalDet scanner:
-- **Forest & Paper Palette**: Deep bottle-green forest surfaces (`#05110c`, `#0a1d15`, `#10291f`, `#193a2c`), warm ivory paper (`#f4f2eb`, `#fdfcf9`), emerald action buttons (`#1f5f43`), and glowing jade accents (`#a3d9b8`).
+ Shared design tokens and responsive styles live in `src/styles/global.css` (imported through `src/styles/main.css`), matching the exact aesthetic of the MalDet scanner:
+- **Forest & Paper Palette**: Deep bottle-green forest surfaces (`#05110c`, `#0a1d15`, `#10291f`, `#193a2c`), warm ivory paper (`#f4f2eb`, `#fdfcf9`), emerald action buttons (`#1f5f43`), and glowing jade accents (`#a3d9b8`). Hero, pipeline and footer bands stay deep forest in both themes.
 - **5-Tier Risk Colors**: `Safe` (`#6cc28a`), `Low` (`#8bb8d6`), `Medium` (`#e8b84a`), `High` (`#ee9055`), and `Critical` (`#e86a5a`).
-- **Typography**: `IBM Plex Sans` (light 300 display headings with an upright jade accent phrase, matching the [maldet-website](https://github.com/Skidotus/maldet-website) theme), `IBM Plex Mono` for bracketed eyebrows and scan telemetry.
-- **Motion**: Session preloader with falling streaks, interactive canvas particle sphere in the hero, masked line-rise headline, blur-rise scroll reveals, cursor spotlight on cards, scroll-linked word reveal, and a sticky scroll-driven pipeline whose particle form morphs (files → scan → split → shield).
+- **Typography**: `Geist` (light 300 display headings with an upright mint accent phrase) and `Geist Mono` for bracketed eyebrows and scan telemetry.
+- **Motion**: Session preloader with falling streaks, Matrix digital-rain canvas in the hero, masked line-rise headline, blur-rise scroll reveals, cursor spotlight on cards, scroll-linked word reveal, and a sticky scroll-driven pipeline whose particle form morphs (files → scan → split → shield).
 - **Light & Dark Mode**: Supports smooth circular view-transition theme switching.
 
 ---
@@ -79,12 +79,28 @@ The production bundle is output to `dist/`.
 
 ## Deploying on Vercel
 
-Import `https://github.com/Mechaguy06/MalDet-Commercial-Website` into [Vercel](https://vercel.com/new) with the default Vite settings:
+Import `https://github.com/Mechaguy06/MalDet-Commercial-Website` into [Vercel](https://vercel.com/new) with the Astro preset:
 
-- **Framework Preset**: `Vite`
+- **Framework Preset**: `Astro`
 - **Node.js Version**: `22.x`
 - **Install Command**: `pnpm install --frozen-lockfile`
 - **Build Command**: `pnpm run build`
 - **Output Directory**: `dist`
 
-> **Note:** Keep the `.figma/make/site.json` file committed in the repository, as `vite.config.ts` imports it to populate HTML metadata and favicons during build.
+> **Note:** Page titles, descriptions and Open Graph tags are set per page in `src/pages/*.astro` and `src/layouts/BaseLayout.astro`. The `.figma/make/` folder only holds Figma Make tooling and is not used by the Astro build. Old hash links (`/#/documentation`) redirect to the new paths.
+
+---
+
+## Project Structure
+
+```
+src/
+  pages/        index.astro, documentation.astro, contact.astro (one real URL each)
+  layouts/      BaseLayout.astro (SEO meta, fonts, theme/preloader boot script)
+  components/   SiteShell.tsx (React island), ui/, layout/, home/, docs/, contact/
+  views/        AboutPage, DocumentationPage, ContactPage (page bodies)
+  data/         navigation.ts, content.ts (all copy and data)
+  hooks/        useTheme, useLenis, useHeroSpotlight
+  styles/       main.css, global.css
+public/         favicons and images
+```

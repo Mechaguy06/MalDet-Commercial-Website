@@ -1,0 +1,67 @@
+---
+import "@/styles/main.css"
+
+interface Props {
+  title: string
+  description: string
+}
+
+const { title, description } = Astro.props
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : undefined
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    {canonical && <link rel="canonical" href={canonical} />}
+    {canonical && <meta property="og:url" content={canonical} />}
+    <meta name="theme-color" content="#0a1d15" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap"
+    />
+    <script is:inline>
+      // Runs before first paint: theme (no flash), preloader flag, legacy #/route redirect.
+      ;(function () {
+        var root = document.documentElement
+        root.classList.add("js")
+        var stored = null
+        try {
+          stored = localStorage.getItem("maldet-theme")
+        } catch (e) {}
+        root.dataset.theme =
+          stored === "light" || stored === "dark"
+            ? stored
+            : window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light"
+
+        var seen = false
+        try {
+          seen = sessionStorage.getItem("maldet-preloaded") === "1"
+        } catch (e) {}
+        if (!seen && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          root.setAttribute("data-preload", "")
+        }
+
+        // Old hash-routed links (/#/documentation) -> real pages.
+        var legacy = { "#/about": "/", "#/documentation": "/documentation", "#/contact": "/contact" }
+        if (legacy[location.hash]) location.replace(legacy[location.hash])
+      })()
+    </script>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>
