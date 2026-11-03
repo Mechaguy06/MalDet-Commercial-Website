@@ -9,32 +9,24 @@ export default function WordReveal({ text, className = "" }: { text: string; cla
     if (!el || prefersReducedMotion()) return
     const words = Array.from(el.querySelectorAll<HTMLElement>(".word"))
     let frame = 0
-    let fullyLit = false
 
     const update = () => {
       frame = 0
-      if (fullyLit) return
-
       const rect = el.getBoundingClientRect()
       const vh = window.innerHeight
 
-      // Starts illuminating as soon as it scrolls into bottom 85% of viewport
-      // Fully lights up all words when paragraph reaches upper-middle of screen (50% vh)
-      const start = vh * 0.85
+      // Slowly lights up word-by-word as it scrolls into view (from 90% vh down to 50% vh)
+      // When the paragraph reaches the center of the screen (50% vh), 100% of words are fully lit up
+      const start = vh * 0.90
       const end = vh * 0.50
       const progress = Math.min(1, Math.max(0, (start - rect.top) / (start - end)))
       const lit = Math.round(progress * words.length)
 
       words.forEach((w, i) => w.classList.toggle("on", i < lit))
-
-      if (progress >= 1) {
-        fullyLit = true
-        words.forEach((w) => w.classList.add("on"))
-      }
     }
 
     const onScroll = () => {
-      if (!frame && !fullyLit) frame = requestAnimationFrame(update)
+      if (!frame) frame = requestAnimationFrame(update)
     }
 
     update()
