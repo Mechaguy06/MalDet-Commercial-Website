@@ -9,7 +9,7 @@ export interface ArchNode {
   protocol: string
   detail: string
   doc: string
-  icon: "client" | "laptop" | "cloud" | "firewall" | "proxy" | "ssh" | "app" | "worker" | "db"
+  type: "monitor" | "laptop" | "cloud" | "firewall" | "server" | "ssh" | "container" | "worker" | "database"
   popoverPlacement?: "top" | "bottom"
 }
 
@@ -23,7 +23,7 @@ export const archNodes: Record<string, ArchNode> = {
     protocol: "HTTPS / TCP 443 (HTTP 80 → 301)",
     detail: "User visits web scanner or triggers auto-scan via extension",
     doc: "End-user client operating through any modern browser or the companion MalDet extension. Initiates repository scans over TLS-encrypted HTTPS port 443.",
-    icon: "client",
+    type: "monitor",
     popoverPlacement: "bottom",
   },
   dev_laptop: {
@@ -35,7 +35,7 @@ export const archNodes: Record<string, ArchNode> = {
     protocol: "SSH / TCP 8288",
     detail: "Local AI model inference & report summaries via SSH tunnel",
     doc: "Authorized developer workstation running local AI inference using Ollama (qwen3.5:2b). Securely connects over custom port 8288 to tunnel laptop:3307 directly to MySQL:3306 for writing summaries without exposing the database to the internet.",
-    icon: "laptop",
+    type: "laptop",
     popoverPlacement: "bottom",
   },
   external_services: {
@@ -47,7 +47,7 @@ export const archNodes: Record<string, ArchNode> = {
     protocol: "Outbound HTTPS / TCP 443",
     detail: "Clone repo, virus signatures, CVE databases & SSL certs",
     doc: "Upstream services queried during inspection: GitHub REST API & shallow clone, ClamAV virus database mirror via freshclam, PyPI/OSV vulnerabilities for pip-audit, Semgrep community rules, and Let's Encrypt TLS certificates.",
-    icon: "cloud",
+    type: "cloud",
     popoverPlacement: "bottom",
   },
   firewall: {
@@ -59,7 +59,7 @@ export const archNodes: Record<string, ArchNode> = {
     protocol: "Allowed: TCP 80, 443, 8288 · Blocked: 22, 3306, 5000",
     detail: "Drops unauthorized ports; routes web to Apache & admin to SSH",
     doc: "Ubuntu host firewall (UFW/iptables). Only permits incoming web traffic on ports 80/443 and custom SSH on port 8288. All other ports (including default SSH 22, MySQL 3306, and Flask 5000) are blocked from WAN.",
-    icon: "firewall",
+    type: "firewall",
     popoverPlacement: "bottom",
   },
   apache: {
@@ -71,7 +71,7 @@ export const archNodes: Record<string, ArchNode> = {
     protocol: "Apache 2.4 · mod_ssl · Let's Encrypt",
     detail: "Terminates HTTPS & proxies to internal Flask container",
     doc: "Apache 2.4 reverse proxy manages Let's Encrypt TLS certs, automatically upgrades port 80 requests to HTTPS (301 redirect), and reverse-proxies secure requests directly to the Flask WSGI application on 127.0.0.1:5000.",
-    icon: "proxy",
+    type: "server",
     popoverPlacement: "bottom",
   },
   openssh: {
@@ -83,7 +83,7 @@ export const archNodes: Record<string, ArchNode> = {
     protocol: "OpenSSH 9.6 · Public-Key Auth",
     detail: "Provides encrypted SSH tunnel for AI summaries",
     doc: "Hardened OpenSSH service on custom port 8288 with password authentication disabled. Forwards secure SSH tunnel from developer laptop:3307 to db:3306 for local AI summary ingestion.",
-    icon: "ssh",
+    type: "ssh",
     popoverPlacement: "bottom",
   },
   app_container: {
@@ -95,7 +95,7 @@ export const archNodes: Record<string, ArchNode> = {
     protocol: "Python 3.12 · Flask · Gunicorn WSGI",
     detail: "Serves web console, accepts scan jobs & queries database",
     doc: "Web application container running Flask with 2 Gunicorn workers. Exposes port 5000 exclusively on loopback (127.0.0.1) behind Apache. Connects to the database container over the Docker bridge network on TCP 3306.",
-    icon: "app",
+    type: "container",
     popoverPlacement: "top",
   },
   worker_container: {
@@ -107,7 +107,7 @@ export const archNodes: Record<string, ArchNode> = {
     protocol: "6 Static Analysis Engines + Scikit-Learn Classifier",
     detail: "Executes multi-engine analysis, triages noise & writes verdicts",
     doc: "Isolated analysis worker container executing one scan at a time for predictable server resource bounds. Orchestrates all 6 static security engines without executing repository code, evaluates findings with Random Forest ML to filter noise, and writes verdicts to MySQL.",
-    icon: "worker",
+    type: "worker",
     popoverPlacement: "top",
   },
   db_container: {
@@ -119,53 +119,64 @@ export const archNodes: Record<string, ArchNode> = {
     protocol: "MySQL 8.0 · InnoDB",
     detail: "Internal database for scan ledgers, findings & AI summaries",
     doc: "Dedicated MySQL 8.0 container holding historical repository audits, findings, confidence ratings, and AI explanations. Its port 3306 is not published to the host, ensuring zero direct WAN exposure.",
-    icon: "db",
+    type: "database",
     popoverPlacement: "top",
   },
 }
 
-function NodeIcon({ type }: { type: ArchNode["icon"] }) {
+function PreviousNodeIcon({ type }: { type: ArchNode["type"] }) {
   switch (type) {
-    case "client":
+    case "monitor":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+          <path d="M3 5.5A1.5 1.5 0 0 1 4.5 4h15A1.5 1.5 0 0 1 21 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 14.5z" />
+          <path d="M9 20h6M12 16.5V20" />
+          <path d="M7 8.5l2.5 2.5L7 13.5" />
+        </svg>
+      )
     case "laptop":
       return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="arch-svg-icon">
-          <rect x="3" y="4" width="18" height="12" rx="2" />
-          <path d="M2 18h20v2H2z" />
-          <circle cx="12" cy="10" r="1.5" />
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+          <rect x="4" y="4" width="16" height="11" rx="1.5" />
+          <path d="M2.5 19h19M12 15v4" />
+          <circle cx="12" cy="9.5" r="1.5" />
         </svg>
       )
     case "cloud":
       return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="arch-svg-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
           <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+          <path d="M12 13v4M10 15l2-2 2 2" />
         </svg>
       )
     case "firewall":
       return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="arch-svg-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
           <rect x="3" y="3" width="18" height="18" rx="2" />
           <path d="M3 9h18M3 15h18M9 3v6M15 9v6M9 15v6" />
+          <circle cx="6" cy="6" r="1" fill="currentColor" />
+          <circle cx="12" cy="12" r="1" fill="currentColor" />
         </svg>
       )
-    case "proxy":
+    case "server":
       return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="arch-svg-icon">
-          <circle cx="12" cy="12" r="9" />
-          <path d="M3.6 9h16.8M3.6 15h16.8M11.5 3a17 17 0 0 0 0 18M12.5 3a17 17 0 0 1 0 18" />
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+          <rect x="4" y="3.5" width="16" height="7" rx="1.5" />
+          <rect x="4" y="13.5" width="16" height="7" rx="1.5" />
+          <path d="M7.5 7h.01M7.5 17h.01M11 7h6M11 17h6" />
         </svg>
       )
     case "ssh":
       return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="arch-svg-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
           <rect x="5" y="11" width="14" height="10" rx="2" />
-          <circle cx="12" cy="16" r="1" />
+          <circle cx="12" cy="16" r="1.2" />
           <path d="M8 11V7a4 4 0 0 1 8 0v4" />
         </svg>
       )
-    case "app":
+    case "container":
       return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="arch-svg-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
           <polygon points="12 2 2 7 12 12 22 7 12 2" />
           <polyline points="2 17 12 22 22 17" />
           <polyline points="2 12 12 17 22 12" />
@@ -173,14 +184,14 @@ function NodeIcon({ type }: { type: ArchNode["icon"] }) {
       )
     case "worker":
       return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="arch-svg-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
           <circle cx="12" cy="12" r="3" />
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
         </svg>
       )
-    case "db":
+    case "database":
       return (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="arch-svg-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
           <ellipse cx="12" cy="5" rx="9" ry="3" />
           <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
           <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
@@ -206,28 +217,34 @@ export default function Topology() {
     const isActive = activeNode === nodeId
 
     return (
-      <div className={`arch-node-wrapper ${isActive ? "is-active" : ""}`} key={node.id}>
+      <div className={`topo-node-wrapper ${isActive ? "is-active" : ""}`} key={node.id}>
         <button
           type="button"
-          className={`arch-node-card ${isActive ? "arch-node-card-active" : ""}`}
+          className={`topo-node network-device network-device-${node.type} ${
+            isActive ? "topo-node-active" : ""
+          }`}
           onClick={(e) => {
             e.stopPropagation()
             setActiveNode(isActive ? null : node.id)
           }}
           aria-expanded={isActive}
         >
-          <div className="arch-node-top">
-            <span className="arch-node-icon-shell">
-              <NodeIcon type={node.icon} />
-            </span>
-            <span className="arch-node-click-pill">
-              {isActive ? "Close" : "Click for info"}
-            </span>
-          </div>
-          <h4 className="arch-node-title">{node.label}</h4>
-          <p className="arch-node-role">{node.role}</p>
+          <span className={`topo-node-icon topo-icon-${node.type}`} aria-hidden="true">
+            <PreviousNodeIcon type={node.type} />
+          </span>
+
+          <span className="topo-node-meta">
+            <strong>{node.label}</strong>
+            <span>{node.endpoint}</span>
+            <small className="topo-node-subdetail">{node.role}</small>
+          </span>
+
+          <span className="topo-node-badge">
+            {isActive ? "Close ✕" : "Click for info ↗"}
+          </span>
         </button>
 
+        {/* Exact-Location Popover right at the clicked node */}
         {isActive && (
           <div
             className={`arch-exact-popover placement-${node.popoverPlacement || "bottom"}`}

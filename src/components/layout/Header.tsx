@@ -35,56 +35,75 @@ export default function Header({
   }, [open])
 
   return (
-    <header className={`site-header ${scrolled || open ? "site-header-scrolled" : ""}`}>
-      <nav className="nav-shell" aria-label="Primary navigation">
-        <a className="brand-button" href={pagePath.about} aria-label="MalDet home">
-          <Brand />
-        </a>
-        <div
-          id="primary-menu"
-          className={`nav-links ${open ? "nav-links-open" : ""}`}
-        >
-          {navigation.map((item) => (
-            <a
-              key={item.id}
-              className={`nav-link ${
-                page === item.id ? "nav-link-active" : ""
-              }`}
-              href={item.path}
-              aria-current={page === item.id ? "page" : undefined}
-            >
-              <span className="nav-link-text">{item.label}</span>
-            </a>
-          ))}
-        </div>
-        <div className="header-actions">
+    <>
+      <header className={`site-header ${scrolled || open ? "site-header-scrolled" : ""}`}>
+        <nav className="nav-shell" aria-label="Primary navigation">
           <a
-            href={MALDET_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="header-cta-link"
-            aria-label="Open live MalDet web scanner in a new tab"
+            className="brand-button"
+            href={pagePath.about}
+            aria-label="MalDet home"
+            onClick={() => setOpen(false)}
           >
-            <span className="header-cta-dot" aria-hidden="true" />
-            <span>Open MalDet</span>
-            <span className="header-cta-label-full">Scanner</span>
-            <span aria-hidden="true">↗</span>
+            <Brand />
           </a>
-          <ThemeToggle theme={theme} onToggle={onToggleTheme} />
-          <button
-            className="menu-button"
-            type="button"
-            onClick={() => setOpen((value) => !value)}
-            aria-label="Toggle navigation menu"
-            aria-expanded={open}
-            aria-controls="primary-menu"
+
+          <div
+            id="primary-menu"
+            className={`nav-links ${open ? "nav-links-open" : ""}`}
           >
-            <span />
-            <span />
-            <span />
-          </button>
-        </div>
-      </nav>
-    </header>
+            {navigation.map((item) => (
+              <a
+                key={item.id}
+                className={`nav-link ${
+                  page === item.id ? "nav-link-active" : ""
+                }`}
+                href={item.path}
+                aria-current={page === item.id ? "page" : undefined}
+                onClick={() => setOpen(false)}
+              >
+                <span className="nav-link-text">{item.label}</span>
+              </a>
+            ))}
+          </div>
+
+          <div className="header-actions">
+            <a
+              href={MALDET_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="header-cta-link"
+              aria-label="Open live MalDet web scanner in a new tab"
+            >
+              <span className="header-cta-dot" aria-hidden="true" />
+              <span>Open MalDet</span>
+              <span className="header-cta-label-full">Scanner</span>
+              <span aria-hidden="true">↗</span>
+            </a>
+            <ThemeToggle theme={theme} onToggle={onToggleTheme} />
+            <button
+              className={`menu-button ${open ? "menu-button-open" : ""}`}
+              type="button"
+              onClick={() => setOpen((value) => !value)}
+              aria-label={open ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={open}
+              aria-controls="primary-menu"
+            >
+              <span />
+              <span />
+              <span />
+            </button>
+          </div>
+        </nav>
+      </header>
+
+      {/* Android / mobile touch backdrop */}
+      {open && (
+        <div
+          className="mobile-nav-backdrop"
+          onClick={() => setOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+    </>
   )
 }
