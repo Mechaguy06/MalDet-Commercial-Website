@@ -3,21 +3,39 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MalDet — AI-Driven Malware Detection & Trust Scoring for GitHub Repositories</title>
-    <meta
-      name="description"
-      content="MalDet scans public GitHub repositories with six detection engines, filters noise with a Random Forest classifier, and delivers clear Vulnerability and Malicious-Pattern verdicts."
-    />
-    <meta property="og:title" content="MalDet — AI-Driven Malware Detection & Trust Scoring" />
-    <meta
-      property="og:description"
-      content="Know what a repository hides before you run it. Multi-engine static analysis and supply-chain risk scanning for public GitHub repositories."
-    />
+    <title>MalDet — Malware &amp; supply-chain scanning for GitHub repositories</title>
+    <!-- description, og:title, og:description, og:image and twitter:image are injected from .figma/make/site.json -->
     <meta property="og:type" content="website" />
-    <meta name="theme-color" content="#0a1d15" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
+    <meta property="og:site_name" content="MalDet" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="MalDet — know what a repository hides before you run it." />
+    <meta name="twitter:title" content="MalDet — Malware & supply-chain scanning for GitHub repositories" />
+    <meta
+      name="twitter:description"
+      content="Paste a GitHub URL. Six detection engines, ML triage and a plain-English summary give the repo a trust score before you run it."
+    />
+    <meta name="theme-color" content="#f4f2eb" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#07130e" media="(prefers-color-scheme: dark)" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap"
+    />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "MalDet",
+        "applicationCategory": "SecurityApplication",
+        "operatingSystem": "Web",
+        "description": "MalDet scans public GitHub repositories for malware, vulnerable dependencies and supply-chain attacks with six detection engines, sorts findings with machine-learning triage, and gives each repository a trust score.",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "name": "Free" }
+      }
+    </script>
     <script>
-      // Prevent theme flash: apply stored/system theme before first paint.
+      // Apply stored or system theme before first paint to avoid a flash.
       ;(function () {
         var stored = null
         try {

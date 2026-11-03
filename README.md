@@ -1,84 +1,62 @@
-# MalDet — Commercial & Academic Showcase Website
+# MalDet — Commercial Website
 
-<p align="center">
-  <img src="public/assets/maldet-logo.png" alt="MalDet Logo" width="140" />
-</p>
+Single-page marketing site for **MalDet**, which scans public GitHub repositories for malware, vulnerable dependencies and supply-chain attacks, sorts findings with ML triage, and gives each repository a trust score from Safe to Critical.
 
-> **Development of an AI-Driven Malware Detection and Trust Scoring System for GitHub Repositories (MalDet)**  
-> Final Year Project · Diploma in Cyber Security Technology · German-Malaysian Institute (GMI) · 2026
+React 19 · Vite 8 · TypeScript · Tailwind CSS v4. No animation or UI libraries — the particle field is a small 2D-canvas component.
 
-A standalone React 19 + Vite 8 + TypeScript + Tailwind CSS v4 commercial showcase website for **MalDet**, featuring three hash-routed pages (`Overview`, `How It Works & Tools`, and `About Us & Team`) and direct links to the live MalDet scanner at **[https://maldet-fyp.my/](https://maldet-fyp.my/)**.
+## Local development
 
----
-
-## Live Links
-
-- **Live MalDet Scanner Application**: [https://maldet-fyp.my/](https://maldet-fyp.my/)
-- **Live Scan History Ledger**: [https://maldet-fyp.my/history](https://maldet-fyp.my/history)
-- **GitHub Repository**: [https://github.com/Mechaguy06/MalDet-Commercial-Website](https://github.com/Mechaguy06/MalDet-Commercial-Website)
-
----
-
-## Website Structure (3 Pages)
-
-1. **Page 1 — `Overview` (`#/about`)**
-   - **Hero & Live Telemetry**: Full FYP title, direct scanner CTA, and a live preview card of Scan Report `#201` (`Skidotus/maldet`) showing separated **Vulnerability** and **Malicious-Pattern** risk gauges.
-   - **Key Metrics**: `181+` repositories scanned, `63,496` findings analysed, `6` detection engines, and `2` clear risk verdicts.
-   - **The Problem & The MalDet Solution**: Explains the supply-chain risks of blind trust in public repositories, alert fatigue across fragmented tools, and how MalDet solves them via static multi-engine orchestration and Random Forest triage.
-
-2. **Page 2 — `How It Works & Tools` (`#/documentation`)**
-   - **4-Stage Scanning Workflow**: `01 Fetch & Unpack` → `02 Multi-Engine Detect` → `03 Random Forest Triage` → `04 Dual Verdict & Score`.
-   - **The 8 Detection & Triage Components**:
-     - *Vulnerability Axis*: **Bandit**, **Semgrep**, **pip-audit**
-     - *Malicious-Pattern Axis*: **YARA**, **ClamAV**, **GuardDog**, **Dependency Checker** *(custom-built for MalDet)*
-     - *ML Triage*: **Risk Classifier** *(Random Forest model trained on real scan data)*
-   - **Interactive Architecture Diagram**: Clickable node diagram illustrating data flow from the GitHub API to the MalDet Orchestrator, Random Forest Classifier, Dual-Axis Trust Scorer, and Local LLM & Web Console.
-   - **User Interface Showcase**: Interactive browser mockups of the *One-Click Repository Scanner*, *Interactive Triage & Verdict Console*, and *Scan History & Verdict Ledger*.
-
-3. **Page 3 — `About Us & Team` (`#/contact`)**
-   - **Project Team**:
-     - **Sir Luqman** — Project Supervisor
-     - **Haikal** — Team Lead & Core System Architect (`@Skidotus`)
-     - **Ariff** — Project Team Member · Security & Detection Engines
-     - **Aleena** — Project Team Member · AI Classifier & Data Triage
-     - **Adam** — Project Team Member · Web Interface & Reporting
-   - **Direct Access & Inquiry Form**: Validated demonstration contact form alongside direct links to launch the live MalDet scanner.
-
----
-
-## Design & Theme System
-
- Shared design tokens and responsive styles live in `styles/global.css` and `src/index.css`, matching the exact aesthetic of the MalDet scanner:
-- **Forest & Paper Palette**: Deep bottle-green forest surfaces (`#05110c`, `#0a1d15`, `#10291f`, `#193a2c`), warm ivory paper (`#f4f2eb`, `#fdfcf9`), emerald action buttons (`#1f5f43`), and glowing jade accents (`#a3d9b8`).
-- **5-Tier Risk Colors**: `Safe` (`#6cc28a`), `Low` (`#8bb8d6`), `Medium` (`#e8b84a`), `High` (`#ee9055`), and `Critical` (`#e86a5a`).
-- **Typography**: `IBM Plex Serif` for display headings, `IBM Plex Sans` for body/UI copy, and `IBM Plex Mono` for scan telemetry.
-- **Light & Dark Mode**: Supports smooth circular view-transition theme switching.
-
----
-
-## Local Setup & Development
-
-Use **Node.js 22 LTS** and **pnpm 10** (pinned in `.mise.toml`).
+Use **Node.js 22** and **pnpm 10** (pinned in `.mise.toml`).
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm run dev
-```
-
-To typecheck and build for production:
-
-```sh
+pnpm run dev        # http://localhost:8443
 pnpm run typecheck
-pnpm run build
+pnpm run build      # outputs dist/
 ```
 
-The production bundle is output to `dist/`.
+## Structure
 
----
+```
+src/
+  App.tsx               page composition
+  index.css             design tokens (light/dark), component classes, motion
+  lib/site.ts           scanner URL, external links, nav, repo-URL parsing
+  lib/motion.ts         reduced-motion, reveal-on-scroll, spotlight helpers
+  lib/theme.ts          theme toggle (circular view-transition reveal)
+  components/           Header, Preloader, ParticleField, RepoForm, Risk badges/scale, …
+  sections/             Hero, Problem, HowItWorks, Engines, ReportPreview,
+                        Extension, Pricing, UseCases, Faq, Footer (CTA + footer)
+```
+
+Sections in page order: hero with repo-URL input and example report card → problem → how it works (scroll-pinned particle morph: files → scan → triage split → shield) → six detection engines → sample report (verdict, findings log, trend chart, API/CI snippets) → browser extension → pricing with comparison table → use cases → FAQ → footer CTA.
+
+## Design system
+
+- Every colour is a CSS token in `src/index.css`. Light ("paper") is the default; `[data-theme="dark"]` switches to "forest". `.stage` and `.code` always use the dark tokens, so hero bands and code snippets stay dark in both themes.
+- Verdict scale tokens: `--risk-{safe,low,medium,high,critical}` (swatch), `-ink` (AA text), `-soft` (badge tint). Every text/background pair passes WCAG AA in both themes.
+- Type: IBM Plex Sans (light 300 for display headings) and IBM Plex Mono for labels and telemetry.
+- Motion respects `prefers-reduced-motion`: no preloader, static particle frames, content visible immediately.
+- On mobile, the pricing comparison table and the findings log collapse into cards.
+
+## Placeholders to replace before launch
+
+Placeholders render as dashed amber chips (`<Placeholder>`), so they're easy to spot on the page.
+
+| Where | What |
+| --- | --- |
+| Hero stats, FAQ | Typical / median scan time |
+| Pricing | Free tier daily scan limit, Pro monthly price |
+| FAQ "Is my code stored?" | Retention policy for checkouts and reports |
+| Extension section | Chrome / Firefox store links (`LINKS` in `src/lib/site.ts`), example "Scanned" date |
+| `src/lib/site.ts` | Docs, privacy, terms URLs; contact and sales emails (currently `@maldet.example`) |
+| Sample report | API endpoint and GitHub Action names are illustrative (`api.maldet.example`, `maldet/scan-action`) |
+| `src/lib/site.ts` | The form opens `SCANNER_URL?repo=…` — confirm the scanner reads the `repo` parameter |
+| `.figma/make/site.json` | `openGraph.image` is relative; set it to an absolute URL once the domain is known |
 
 ## Deploying on Vercel
 
-Import `https://github.com/Mechaguy06/MalDet-Commercial-Website` into [Vercel](https://vercel.com/new) with the default Vite settings:
+Import the repository into [Vercel](https://vercel.com/new) with the default Vite settings:
 
 - **Framework Preset**: `Vite`
 - **Node.js Version**: `22.x`
@@ -86,4 +64,4 @@ Import `https://github.com/Mechaguy06/MalDet-Commercial-Website` into [Vercel](h
 - **Build Command**: `pnpm run build`
 - **Output Directory**: `dist`
 
-> **Note:** Keep the `.figma/make/site.json` file committed in the repository, as `vite.config.ts` imports it to populate HTML metadata and favicons during build.
+> Keep `.figma/make/site.json` committed: `vite.config.ts` imports it to inject the meta description, Open Graph tags and favicon at build time.

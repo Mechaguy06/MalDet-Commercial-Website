@@ -1,8 +1,11 @@
 {
-  "title": "MalDet — AI-Driven Malware Detection & Trust Scoring for GitHub Repositories",
-  "description": "MalDet scans public GitHub repositories with six detection engines, filters noise with a Random Forest classifier, and delivers clear Vulnerability and Malicious-Pattern verdicts.",
+  "title": "MalDet — Malware & supply-chain scanning for GitHub repositories",
+  "description": "Paste a GitHub URL and MalDet runs six detection engines, sorts findings with machine-learning triage and gives the repository a trust score from Safe to Critical — before you run it.",
   "icons": {
-    "icon": "/favicon.png"
+    "icon": "/favicon.svg"
+  },
+  "openGraph": {
+    "image": "/og-image.png"
   },
   "robots": {
     "index": true
