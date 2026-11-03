@@ -1,3 +1,0 @@
-minimumReleaseAgeExclude:
-  - '@napi-rs/wasm-runtime@1.2.7'
-  - astro@7.4.5
