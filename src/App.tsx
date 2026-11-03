@@ -302,12 +302,12 @@ const useReducedMotion = () =>
 
 function useTheme() {
   const [theme, setTheme] = useState<"light" | "dark">(() => {
-    if (typeof window === "undefined") return "dark"
+    if (typeof window === "undefined") return "light"
     const stored = window.localStorage.getItem("maldet-theme")
     if (stored === "light" || stored === "dark") return stored
     return window.matchMedia("(prefers-color-scheme: dark)").matches
       ? "dark"
-      : "dark"
+      : "light"
   })
 
   useEffect(() => {
@@ -1057,23 +1057,6 @@ function AboutPage({ onNavigate }: { onNavigate: (page: Page) => void }) {
             </div>
             <HeroVerdictPreviewCard />
           </div>
-        </div>
-        <div className="content-shell zb-hero-dock" role="list" aria-label="Six core detection engines">
-          {detectionTools.slice(0, 6).map((engine) => (
-            <button
-              key={engine.name}
-              type="button"
-              role="listitem"
-              className="zb-dock-card"
-              onClick={() => onNavigate("documentation")}
-            >
-              <span className="zb-dock-visual" aria-hidden="true">
-                <span className="zb-dock-badge">{engine.code}</span>
-                <span className="zb-dock-tag">{engine.axis}</span>
-              </span>
-              <strong className="zb-dock-title">{engine.name}</strong>
-            </button>
-          ))}
         </div>
         <div className="hero-scroll-hint" aria-hidden="true">
           <span />
@@ -1969,28 +1952,7 @@ function DocumentationPage({
               description="Explore the three core interfaces of the MalDet web application: the repository scanner, the dual-verdict report console, and the historical audit ledger."
             />
           </Reveal>
-          <div className="zb-case-tabs" role="navigation" aria-label="Interface showcase quick jump">
-            {interfaceData.map((item, idx) => (
-              <a
-                key={item.title}
-                href={`#ui-showcase-${idx}`}
-                className={`zb-case-tab ${idx === 0 ? "zb-case-tab-active" : ""}`}
-                onClick={(e) => {
-                  e.preventDefault()
-                  document.getElementById(`ui-showcase-${idx}`)?.scrollIntoView({ behavior: "smooth", block: "center" })
-                }}
-              >
-                <span className="zb-case-tab-num">{String(idx + 1).padStart(2, "0")}</span>
-                <span>{item.title}</span>
-              </a>
-            ))}
-          </div>
           {interfaceData.map((data, index) => (
-            <div id={`ui-showcase-${index}`} key={data.title}>
-              <InterfaceShowcase data={data} reverse={index % 2 === 1} />
-            </div>
-          ))}
-          {false && interfaceData.map((data, index) => (
             <InterfaceShowcase
               data={data}
               reverse={index % 2 === 1}
