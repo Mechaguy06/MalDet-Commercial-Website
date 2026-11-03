@@ -5120,9 +5120,60 @@ html:not(.js) .wf-reveal {
 /* ===== Hero: balanced grand layout fitted precisely in the frame ===== */
 
 .hero-section {
+  min-height: calc(100svh - 3.25rem) !important;
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+:root .hero-section.stage {
+  background: #05110c !important;
+}
+
+.hero-section::before,
+.hero-section::after,
+.hero-glow,
+.hero-scroll-hint {
+  display: none !important;
+}
+
+.post-marquee-container {
+  position: relative;
+}
+
+.falling-logos-shell {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.falling-logos-canvas {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  pointer-events: none;
+  display: block;
+}
+
+.post-marquee-container section {
+  position: relative;
+  z-index: 1;
+}
+
+.marquee {
+  position: relative;
+  z-index: 10;
+  height: 3.25rem;
+  box-sizing: border-box;
+  padding-block: 0;
+  display: flex;
+  align-items: center;
+  background: #05110c;
 }
 
 .hero-layout {

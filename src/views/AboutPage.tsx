@@ -1,3 +1,4 @@
+import FallingLogos from "@/components/FallingLogos"
 import MatrixRain from "@/components/MatrixRain"
 import { pagePath, MALDET_URL } from "@/data/navigation"
 import { problemCards, solutions, stats } from "@/data/content"
@@ -18,15 +19,7 @@ export default function AboutPage() {
       <section className="hero-section stage" ref={heroRef}>
         <MatrixRain />
         <div className="hero-grid-pattern" aria-hidden="true" />
-        <div className="hero-glow" aria-hidden="true" />
-        <div className="hero-particles" aria-hidden="true">
-          <i />
-          <i />
-          <i />
-          <i />
-          <i />
-          <i />
-        </div>
+
         <div className="content-shell hero-layout">
           <div className="hero-copy">
             <p className="eyebrow">
@@ -66,13 +59,13 @@ export default function AboutPage() {
             </div>
           </div>
         </div>
-        <div className="hero-scroll-hint" aria-hidden="true">
-          <span />
-          Scroll to explore
-        </div>
+
       </section>
 
       <MarqueeBand />
+
+      <div className="post-marquee-container">
+        <FallingLogos />
 
       <section className="stats-section">
         <div className="content-shell stats-grid">
@@ -253,6 +246,7 @@ export default function AboutPage() {
           </div>
         </Reveal>
       </section>
+          </div>
     </main>
   )
 }
