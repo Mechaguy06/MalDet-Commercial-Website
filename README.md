@@ -87,7 +87,7 @@ Import `https://github.com/Mechaguy06/MalDet-Commercial-Website` into [Vercel](h
 - **Build Command**: `pnpm run build`
 - **Output Directory**: `dist`
 
-> **Note:** Page titles, descriptions and Open Graph tags are set per page in `src/pages/*.astro` and `src/layouts/BaseLayout.astro`. The `.figma/make/` folder only holds Figma Make tooling and is not used by the Astro build. Old hash links (`/#/documentation`) redirect to the new paths.
+> **Note:** Page titles, descriptions and Open Graph tags are set per page in `src/pages/*.astro` and `src/layouts/BaseLayout.astro`. Old hash links (`/#/documentation`) redirect to the new paths.
 
 ---
 
