@@ -87,6 +87,44 @@ export default function AboutPage() {
         </div>
       </section>
 
+      <section className="commercial-section section-pad">
+        <div className="content-shell">
+          <Reveal>
+            <SectionHeading
+              eyebrow="Commercial · Watch in action"
+              title={
+                <>
+                  See <em>MalDet</em> in Action
+                </>
+              }
+              description="Discover how MalDet protects your development workflow with multi-engine scanning and intelligent threat detection."
+            />
+          </Reveal>
+          <Reveal delay={120} className="commercial-video-wrapper">
+            <div className="commercial-video-card">
+              <div className="commercial-video-header">
+                <div className="video-badge">
+                  <span className="video-badge-dot" />
+                  <span>MalDet Official Commercial</span>
+                </div>
+                <span className="video-resolution-pill">1080P HD</span>
+              </div>
+              <div className="commercial-video-frame">
+                <video
+                  className="commercial-video-element"
+                  src="/assets/Maldet_Video_Commercial.mp4"
+                  controls
+                  playsInline
+                  preload="metadata"
+                >
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
       <section className="overview-section section-pad">
         <div className="content-shell overview-layout">
           <Reveal className="overview-copy">
