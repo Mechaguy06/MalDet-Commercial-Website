@@ -5094,3 +5094,32 @@ body,
   align-items: center;
   justify-content: flex-start;
 }
+
+
+/* Fix .visual-caption overlapping top border of .maldet-hero-card on desktop/tablet
+   and prevent mid-phrase wrapping inside .maldet-triage-head */
+.hero-visual {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  gap: 0.9rem;
+  min-height: 0;
+}
+
+.visual-caption {
+  position: static !important;
+  top: auto;
+  left: auto;
+  padding-inline: 0.25rem;
+}
+
+.maldet-triage-head {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+}
+
+.maldet-triage-head > span {
+  white-space: nowrap;
+}
