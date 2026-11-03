@@ -64,7 +64,7 @@ export default function AboutPage() {
 
       <MarqueeBand />
 
-      <div className="post-marquee-container">
+      <div className="commercial-showcase-zone">
         <FallingLogos />
 
       <section className="stats-section">
@@ -117,6 +117,7 @@ export default function AboutPage() {
           </Reveal>
         </div>
       </section>
+      </div>
 
       <section className="overview-section section-pad">
         <div className="content-shell overview-layout">
@@ -246,7 +247,6 @@ export default function AboutPage() {
           </div>
         </Reveal>
       </section>
-          </div>
-    </main>
+        </main>
   )
 }

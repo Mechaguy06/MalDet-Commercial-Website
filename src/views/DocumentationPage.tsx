@@ -100,10 +100,10 @@ export default function DocumentationPage() {
               eyebrow="Interactive system architecture"
               title={
                 <>
-                  Multi-Engine & ML <em>Triage Architecture</em>
+                  Production VPS & Multi-Container <em>Architecture</em>
                 </>
               }
-              description="Click any node below to inspect how MalDet ingests GitHub repositories, orchestrates six static engines, filters noise with Random Forest, and publishes dual verdicts."
+              description="Click any component below to view its live endpoint, port security rules, and container isolation boundaries across WAN, Apache reverse proxy, and the Docker bridge network."
             />
           </Reveal>
           <Reveal delay={100}>

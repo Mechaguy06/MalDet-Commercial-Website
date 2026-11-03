@@ -1,397 +1,395 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
-export type TopologyViewMode = "physical" | "logical"
-
-export interface TopologyNodeSpec {
+export interface ArchNode {
   id: string
-  type: "monitor" | "switch" | "server" | "user"
   label: string
   role: string
-  ip: string
+  zone: string
+  endpoint: string
   protocol: string
   detail: string
-  documentation: string
+  doc: string
+  icon: "client" | "laptop" | "cloud" | "firewall" | "proxy" | "ssh" | "app" | "worker" | "db"
+  popoverPlacement?: "top" | "bottom"
 }
 
-export const topologyNodes: TopologyNodeSpec[] = [
-  {
-    id: "pc",
-    type: "monitor",
-    label: "GitHub Repository Target",
-    role: "Public source & archive ingestion",
-    ip: "api.github.com",
-    protocol: "HTTPS · Shallow Clone",
-    detail: "Fetches metadata & extracts .zip/.7z/.rar",
-    documentation:
-      "MalDet connects to the public GitHub API to retrieve repository metadata (stars, primary language, owner) and performs a shallow clone into an isolated workspace. Nested archives—including password-protected malware samples—are safely unpacked before inspection.",
+export const archNodes: Record<string, ArchNode> = {
+  client_device: {
+    id: "client_device",
+    label: "Client Device",
+    role: "Web browser + MalDet browser extension",
+    zone: "INTERNET (WAN)",
+    endpoint: "maldet-fyp.my / Chrome & Firefox Ext",
+    protocol: "HTTPS / TCP 443 (HTTP 80 → 301)",
+    detail: "User visits web scanner or triggers auto-scan via extension",
+    doc: "End-user client operating through any modern browser or the companion MalDet extension. Initiates repository scans over TLS-encrypted HTTPS port 443.",
+    icon: "client",
+    popoverPlacement: "bottom",
   },
-  {
-    id: "switch",
-    type: "switch",
-    label: "MalDet Orchestrator",
-    role: "6-Engine Static Analysis Core",
-    ip: "maldet-fyp.my",
-    protocol: "Gunicorn · Multi-Engine Pipeline",
-    detail: "Bandit, Semgrep, pip-audit, YARA, ClamAV, GuardDog",
-    documentation:
-      "The central MalDet scanning controller coordinates six open-source detection engines alongside our custom Dependency Checker. It normalizes heterogeneous JSON and text outputs into a unified finding schema without executing any code from the target repository.",
+  dev_laptop: {
+    id: "dev_laptop",
+    label: "Developer Laptop (admin)",
+    role: "Ollama qwen3.5:2b + backfill_summaries.py",
+    zone: "INTERNET (WAN)",
+    endpoint: "Direct SSH Key Auth",
+    protocol: "SSH / TCP 8288",
+    detail: "Local AI model inference & report summaries via SSH tunnel",
+    doc: "Authorized developer workstation running local AI inference using Ollama (qwen3.5:2b). Securely connects over custom port 8288 to tunnel laptop:3307 directly to MySQL:3306 for writing summaries without exposing the database to the internet.",
+    icon: "laptop",
+    popoverPlacement: "bottom",
   },
-  {
-    id: "server",
-    type: "server",
-    label: "Random Forest Classifier",
-    role: "ML Noise Triage & Confidence Scoring",
-    ip: "ML Triage Engine",
-    protocol: "Scikit-Learn · Confidence Weighting",
-    detail: "Rates findings as Likely Real, Uncertain, or Noise",
-    documentation:
-      "Six engines on a large repository can generate thousands of raw alerts. Our trained Random Forest model evaluates each finding's features and assigns a probability confidence score—ensuring high-confidence threats drive the verdict while likely noise is down-weighted.",
+  external_services: {
+    id: "external_services",
+    label: "External Services",
+    role: "GitHub API, ClamAV, OSV/PyPI, Semgrep, Let's Encrypt",
+    zone: "INTERNET (WAN)",
+    endpoint: "api.github.com · OSV · ClamAV Mirrors",
+    protocol: "Outbound HTTPS / TCP 443",
+    detail: "Clone repo, virus signatures, CVE databases & SSL certs",
+    doc: "Upstream services queried during inspection: GitHub REST API & shallow clone, ClamAV virus database mirror via freshclam, PyPI/OSV vulnerabilities for pip-audit, Semgrep community rules, and Let's Encrypt TLS certificates.",
+    icon: "cloud",
+    popoverPlacement: "bottom",
   },
-  {
-    id: "user1",
-    type: "user",
-    label: "Dual-Axis Trust Scorer",
-    role: "Vulnerability & Malicious Verdicts",
-    ip: "Verdict Engine",
-    protocol: "5-Tier Scale (Safe → Critical)",
-    detail: "Separates coding bugs from deliberate malware",
-    documentation:
-      "Computes two independent risk scores: the Vulnerability verdict (from Bandit, Semgrep, and pip-audit) and the Malicious-Pattern verdict (from YARA, ClamAV, GuardDog, and the Dependency Checker). Each axis receives a clear seal from Safe to Critical.",
+  firewall: {
+    id: "firewall",
+    label: "Host Firewall",
+    role: "UFW perimeter protection on Ubuntu 24.04 LTS",
+    zone: "VPS HOST",
+    endpoint: "103.233.1.97",
+    protocol: "Allowed: TCP 80, 443, 8288 · Blocked: 22, 3306, 5000",
+    detail: "Drops unauthorized ports; routes web to Apache & admin to SSH",
+    doc: "Ubuntu host firewall (UFW/iptables). Only permits incoming web traffic on ports 80/443 and custom SSH on port 8288. All other ports (including default SSH 22, MySQL 3306, and Flask 5000) are blocked from WAN.",
+    icon: "firewall",
+    popoverPlacement: "bottom",
   },
-  {
-    id: "user2",
-    type: "user",
-    label: "Local LLM & Web Console",
-    role: "Plain-English Summary & Ledger",
-    ip: "Web UI & History",
-    protocol: "Deterministic Guardrails · SQLite/Ledger",
-    detail: "Explains findings & stores historical reports",
-    documentation:
-      "A local language model translates technical findings into a concise plain-English paragraph for rapid review. By design, risk levels are locked before the LLM runs so it can never hallucinate or alter a verdict. Results are saved to the persistent scan history.",
+  apache: {
+    id: "apache",
+    label: "Apache 2.4 Reverse Proxy",
+    role: "TLS termination & port 80 → 443 redirect",
+    zone: "VPS HOST",
+    endpoint: "127.0.0.1:5000 (loopback)",
+    protocol: "Apache 2.4 · mod_ssl · Let's Encrypt",
+    detail: "Terminates HTTPS & proxies to internal Flask container",
+    doc: "Apache 2.4 reverse proxy manages Let's Encrypt TLS certs, automatically upgrades port 80 requests to HTTPS (301 redirect), and reverse-proxies secure requests directly to the Flask WSGI application on 127.0.0.1:5000.",
+    icon: "proxy",
+    popoverPlacement: "bottom",
   },
-]
-
-export const viewModeLabels: Record<TopologyViewMode, string> = {
-  physical: "Architecture Flow",
-  logical: "Triage Pipeline",
+  openssh: {
+    id: "openssh",
+    label: "OpenSSH Server",
+    role: "TCP 8288 key auth gateway",
+    zone: "VPS HOST",
+    endpoint: "Port 8288",
+    protocol: "OpenSSH 9.6 · Public-Key Auth",
+    detail: "Provides encrypted SSH tunnel for AI summaries",
+    doc: "Hardened OpenSSH service on custom port 8288 with password authentication disabled. Forwards secure SSH tunnel from developer laptop:3307 to db:3306 for local AI summary ingestion.",
+    icon: "ssh",
+    popoverPlacement: "bottom",
+  },
+  app_container: {
+    id: "app_container",
+    label: "App Container",
+    role: "gunicorn + Flask (2 workers)",
+    zone: "DOCKER BRIDGE",
+    endpoint: "127.0.0.1:5000 (published locally only)",
+    protocol: "Python 3.12 · Flask · Gunicorn WSGI",
+    detail: "Serves web console, accepts scan jobs & queries database",
+    doc: "Web application container running Flask with 2 Gunicorn workers. Exposes port 5000 exclusively on loopback (127.0.0.1) behind Apache. Connects to the database container over the Docker bridge network on TCP 3306.",
+    icon: "app",
+    popoverPlacement: "top",
+  },
+  worker_container: {
+    id: "worker_container",
+    label: "Worker Container (1 scan at a time)",
+    role: "Bandit, Semgrep, YARA, ClamAV, GuardDog, pip-audit + Random Forest",
+    zone: "DOCKER BRIDGE",
+    endpoint: "Internal maldet_default network",
+    protocol: "6 Static Analysis Engines + Scikit-Learn Classifier",
+    detail: "Executes multi-engine analysis, triages noise & writes verdicts",
+    doc: "Isolated analysis worker container executing one scan at a time for predictable server resource bounds. Orchestrates all 6 static security engines without executing repository code, evaluates findings with Random Forest ML to filter noise, and writes verdicts to MySQL.",
+    icon: "worker",
+    popoverPlacement: "top",
+  },
+  db_container: {
+    id: "db_container",
+    label: "DB Container (MySQL 8.0)",
+    role: "172.18.0.2:3306 (not published to host)",
+    zone: "DOCKER BRIDGE",
+    endpoint: "Service name: db · Port 3306",
+    protocol: "MySQL 8.0 · InnoDB",
+    detail: "Internal database for scan ledgers, findings & AI summaries",
+    doc: "Dedicated MySQL 8.0 container holding historical repository audits, findings, confidence ratings, and AI explanations. Its port 3306 is not published to the host, ensuring zero direct WAN exposure.",
+    icon: "db",
+    popoverPlacement: "top",
+  },
 }
 
-export function TopologyNodeButton({
-  node,
-  tipOpen,
-  onHover,
-  onOpen,
-  orientation = "vertical",
-  tipPlacement = "top",
-  mode = "physical",
-}: {
-  node: TopologyNodeSpec
-  tipOpen: boolean
-  onHover: (id: string | null) => void
-  onOpen: (id: string) => void
-  orientation?: "vertical" | "horizontal"
-  tipPlacement?: "top" | "bottom"
-  mode?: TopologyViewMode
-}) {
-  return (
-    <button
-      type="button"
-      className={`topo-node topo-node-${orientation} network-device network-device-${node.type}`}
-      onMouseEnter={() => onHover(node.id)}
-      onMouseLeave={() => onHover(null)}
-      onFocus={() => onHover(node.id)}
-      onBlur={() => onHover(null)}
-      onClick={() => onOpen(node.id)}
-      aria-haspopup="dialog"
-      aria-describedby={tipOpen ? `tip-${node.id}` : undefined}
-    >
-      <span className={`topo-node-icon topo-icon-${node.type}`} aria-hidden="true">
-        {node.type === "monitor" && (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-            <path d="M3 5.5A1.5 1.5 0 0 1 4.5 4h15A1.5 1.5 0 0 1 21 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 14.5z" />
-            <path d="M9 20h6M12 16.5V20" />
-            <path d="M7 8.5l2.5 2.5L7 13.5" />
-          </svg>
-        )}
-        {node.type === "switch" && (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-            <rect x="3" y="7" width="18" height="10" rx="1.5" />
-            <path d="M6.5 10.5v3M10 10.5v3M13.5 10.5v3M17 10.5v3" />
-          </svg>
-        )}
-        {node.type === "server" && (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-            <rect x="4" y="3.5" width="16" height="7" rx="1.5" />
-            <rect x="4" y="13.5" width="16" height="7" rx="1.5" />
-            <path d="M7.5 7h.01M7.5 17h.01M11 7h6M11 17h6" />
-          </svg>
-        )}
-        {node.type === "user" && (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-            <rect x="4" y="4" width="16" height="11" rx="1.5" />
-            <path d="M2.5 19h19M12 15v4" />
-          </svg>
-        )}
-      </span>
-      <span className="topo-node-meta">
-        <strong>{node.label}</strong>
-        <span>{mode === "logical" ? node.protocol : node.ip}</span>
-        {mode === "logical" && (
-          <small className="topo-node-subdetail">{node.detail}</small>
-        )}
-      </span>
-      <span
-        className={`topo-tip topo-tip-${tipPlacement}`}
-        id={`tip-${node.id}`}
-        role="tooltip"
-        data-open={tipOpen ? "true" : undefined}
-      >
-        <strong>{node.label}</strong>
-        <span>{node.ip} · {node.protocol}</span>
-        <span className="topo-tip-role">{node.role}</span>
-        <em>Click for architecture details</em>
-      </span>
-    </button>
-  )
+function NodeIcon({ type }: { type: ArchNode["icon"] }) {
+  switch (type) {
+    case "client":
+    case "laptop":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="arch-svg-icon">
+          <rect x="3" y="4" width="18" height="12" rx="2" />
+          <path d="M2 18h20v2H2z" />
+          <circle cx="12" cy="10" r="1.5" />
+        </svg>
+      )
+    case "cloud":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="arch-svg-icon">
+          <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+        </svg>
+      )
+    case "firewall":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="arch-svg-icon">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <path d="M3 9h18M3 15h18M9 3v6M15 9v6M9 15v6" />
+        </svg>
+      )
+    case "proxy":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="arch-svg-icon">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M3.6 9h16.8M3.6 15h16.8M11.5 3a17 17 0 0 0 0 18M12.5 3a17 17 0 0 1 0 18" />
+        </svg>
+      )
+    case "ssh":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="arch-svg-icon">
+          <rect x="5" y="11" width="14" height="10" rx="2" />
+          <circle cx="12" cy="16" r="1" />
+          <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+        </svg>
+      )
+    case "app":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="arch-svg-icon">
+          <polygon points="12 2 2 7 12 12 22 7 12 2" />
+          <polyline points="2 17 12 22 22 17" />
+          <polyline points="2 12 12 17 22 12" />
+        </svg>
+      )
+    case "worker":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="arch-svg-icon">
+          <circle cx="12" cy="12" r="3" />
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+        </svg>
+      )
+    case "db":
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="arch-svg-icon">
+          <ellipse cx="12" cy="5" rx="9" ry="3" />
+          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+        </svg>
+      )
+  }
 }
 
 export default function Topology() {
-  const [mode, setMode] = useState<TopologyViewMode>("physical")
   const [activeNode, setActiveNode] = useState<string | null>(null)
-  const [hoverTip, setHoverTip] = useState<string | null>(null)
 
-  const activeSpec = topologyNodes.find((n) => n.id === activeNode) ?? null
-  const nodeSpec = (id: string) => topologyNodes.find((n) => n.id === id)!
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setActiveNode(null)
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [])
 
-  const branchEdges = [
-    {
-      id: "switch-server",
-      d: "M 450 0 L 450 44 L 150 44 L 150 96",
-      label: mode === "logical" ? "63,496 RAW ALERTS" : "FINDINGS",
-      lx: 290,
-      ly: 34,
-      duration: 2.6,
-    },
-    {
-      id: "switch-user1",
-      d: "M 450 0 L 450 96",
-      label: mode === "logical" ? "ML WEIGHTS" : "WEIGHTS",
-      lx: 462,
-      ly: 72,
-      duration: 2.0,
-    },
-    {
-      id: "switch-user2",
-      d: "M 450 0 L 450 44 L 750 44 L 750 96",
-      label: mode === "logical" ? "LOCKED VERDICTS" : "REPORT",
-      lx: 610,
-      ly: 34,
-      duration: 2.8,
-    },
-  ]
+  const renderNodeButton = (nodeId: string) => {
+    const node = archNodes[nodeId]
+    if (!node) return null
+    const isActive = activeNode === nodeId
 
-  return (
-    <div className={`topology-wrap topo-mode-${mode}`}>
-      <div className="topo-mode-toggle" role="tablist" aria-label="Architecture view mode">
-        {(Object.keys(viewModeLabels) as TopologyViewMode[]).map((m) => (
-          <button
-            key={m}
-            role="tab"
-            aria-selected={mode === m}
-            className={`topo-tab ${mode === m ? "topo-tab-active" : ""}`}
-            type="button"
-            onClick={() => setMode(m)}
+    return (
+      <div className={`arch-node-wrapper ${isActive ? "is-active" : ""}`} key={node.id}>
+        <button
+          type="button"
+          className={`arch-node-card ${isActive ? "arch-node-card-active" : ""}`}
+          onClick={(e) => {
+            e.stopPropagation()
+            setActiveNode(isActive ? null : node.id)
+          }}
+          aria-expanded={isActive}
+        >
+          <div className="arch-node-top">
+            <span className="arch-node-icon-shell">
+              <NodeIcon type={node.icon} />
+            </span>
+            <span className="arch-node-click-pill">
+              {isActive ? "Close" : "Click for info"}
+            </span>
+          </div>
+          <h4 className="arch-node-title">{node.label}</h4>
+          <p className="arch-node-role">{node.role}</p>
+        </button>
+
+        {isActive && (
+          <div
+            className={`arch-exact-popover placement-${node.popoverPlacement || "bottom"}`}
+            role="dialog"
+            onClick={(e) => e.stopPropagation()}
           >
-            {viewModeLabels[m]}
-          </button>
-        ))}
-      </div>
-
-      <div
-        className="logical-topology"
-        role="img"
-        aria-label="MalDet scanning architecture: GitHub repository target feeds into the MalDet Orchestrator, which coordinates the Random Forest Classifier, Dual-Axis Trust Scorer, and Local LLM & Web Console"
-      >
-        <div className="logical-node logical-node-pc">
-          <TopologyNodeButton
-            node={nodeSpec("pc")}
-            tipOpen={hoverTip === "pc"}
-            onHover={setHoverTip}
-            onOpen={setActiveNode}
-            orientation="horizontal"
-            tipPlacement="bottom"
-            mode={mode}
-          />
-        </div>
-
-        {/* Dedicated vertical connector between GitHub Target and Sandbox */}
-        <div className="topo-connector-vertical-wrap" aria-hidden="true">
-          <svg className="topo-connector-vertical" viewBox="0 0 240 68">
-            <defs>
-              <radialGradient id="topo-particle-top" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-                <stop offset="40%" stopColor="var(--color-primary)" stopOpacity="0.9" />
-                <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
-              </radialGradient>
-            </defs>
-            <path d="M 120 0 L 120 68" className="topo-edge-track" />
-            <path
-              d="M 120 0 L 120 68"
-              className="topo-edge-flow"
-              style={{ animationDuration: "2.2s" }}
-            />
-            <text x="132" y="38" className="topo-edge-label">
-              {mode === "logical" ? "SHALLOW ARCHIVE" : "CLONE"}
-            </text>
-            <g className="topo-particle-group">
-              <circle r="5" fill="url(#topo-particle-top)">
-                <animateMotion dur="2.2s" repeatCount="indefinite" path="M 120 0 L 120 68" />
-                <animate
-                  attributeName="opacity"
-                  values="0;1;1;0"
-                  keyTimes="0;0.1;0.9;1"
-                  dur="2.2s"
-                  repeatCount="indefinite"
-                />
-              </circle>
-            </g>
-          </svg>
-        </div>
-
-        <div className="logical-lan">
-          <span className="logical-lan-label">MalDet Sandbox &amp; Scoring Engine</span>
-
-          <div className="logical-node logical-node-switch">
-            <TopologyNodeButton
-              node={nodeSpec("switch")}
-              tipOpen={hoverTip === "switch"}
-              onHover={setHoverTip}
-              onOpen={setActiveNode}
-              orientation="horizontal"
-              tipPlacement="top"
-              mode={mode}
-            />
-          </div>
-
-          {/* Dedicated 3-way branch connector between Orchestrator and the 3 bottom engines */}
-          <div className="topo-connector-branch-wrap" aria-hidden="true">
-            <svg className="topo-connector-branch" viewBox="0 0 900 96" preserveAspectRatio="none">
-              <defs>
-                <radialGradient id="topo-particle" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-                  <stop offset="40%" stopColor="var(--color-primary)" stopOpacity="0.9" />
-                  <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="0" />
-                </radialGradient>
-              </defs>
-              {branchEdges.map((edge) => (
-                <g key={edge.id}>
-                  <path d={edge.d} className="topo-edge-track" />
-                  <path
-                    d={edge.d}
-                    className="topo-edge-flow"
-                    style={{ animationDuration: `${edge.duration}s` }}
-                  />
-                  <text
-                    x={edge.lx}
-                    y={edge.ly}
-                    textAnchor={edge.id === "switch-user1" ? "start" : "middle"}
-                    className="topo-edge-label"
-                  >
-                    {edge.label}
-                  </text>
-                </g>
-              ))}
-              <g className="topo-particle-group">
-                {branchEdges.map((edge) => (
-                  <circle key={`p-${edge.id}`} r="5" fill="url(#topo-particle)">
-                    <animateMotion dur={`${edge.duration}s`} repeatCount="indefinite" path={edge.d} />
-                    <animate
-                      attributeName="opacity"
-                      values="0;1;1;0"
-                      keyTimes="0;0.08;0.92;1"
-                      dur={`${edge.duration}s`}
-                      repeatCount="indefinite"
-                    />
-                  </circle>
-                ))}
-              </g>
-            </svg>
-          </div>
-
-          <div className="logical-grid">
-            <TopologyNodeButton
-              node={nodeSpec("server")}
-              tipOpen={hoverTip === "server"}
-              onHover={setHoverTip}
-              onOpen={setActiveNode}
-              tipPlacement="top"
-              mode={mode}
-            />
-            <TopologyNodeButton
-              node={nodeSpec("user1")}
-              tipOpen={hoverTip === "user1"}
-              onHover={setHoverTip}
-              onOpen={setActiveNode}
-              tipPlacement="top"
-              mode={mode}
-            />
-            <TopologyNodeButton
-              node={nodeSpec("user2")}
-              tipOpen={hoverTip === "user2"}
-              onHover={setHoverTip}
-              onOpen={setActiveNode}
-              tipPlacement="top"
-              mode={mode}
-            />
-          </div>
-        </div>
-      </div>
-
-      <div
-        className={`topo-drawer ${activeSpec ? "topo-drawer-open" : ""}`}
-        role="dialog"
-        aria-modal="true"
-        aria-label={activeSpec ? `${activeSpec.label} details` : undefined}
-        hidden={!activeSpec}
-      >
-        {activeSpec && (
-          <>
-            <button
-              className="topo-drawer-close"
-              type="button"
-              aria-label="Close details"
-              onClick={() => setActiveNode(null)}
-            >
-              ✕
-            </button>
-            <p className="eyebrow">{activeSpec.role}</p>
-            <h3>{activeSpec.label}</h3>
-            <dl className="topo-spec-list">
-              <div>
-                <dt>Endpoint / Component</dt>
-                <dd>{activeSpec.ip}</dd>
+            <div className="arch-popover-notch" />
+            <div className="arch-popover-header">
+              <div className="arch-popover-title-row">
+                <span className="arch-popover-zone-badge">{node.zone}</span>
+                <button
+                  type="button"
+                  className="arch-popover-close-btn"
+                  onClick={() => setActiveNode(null)}
+                  aria-label="Close"
+                >
+                  ✕
+                </button>
               </div>
-              <div>
-                <dt>Technology</dt>
-                <dd>{activeSpec.protocol}</dd>
+              <h4 className="arch-popover-name">{node.label}</h4>
+              <p className="arch-popover-sub">{node.role}</p>
+            </div>
+
+            <div className="arch-popover-body">
+              <div className="arch-popover-tags">
+                <div className="arch-tag-group">
+                  <span className="arch-tag-lbl">Protocol / Ports</span>
+                  <span className="arch-tag-val">{node.protocol}</span>
+                </div>
+                <div className="arch-tag-group">
+                  <span className="arch-tag-lbl">Endpoint</span>
+                  <span className="arch-tag-val">{node.endpoint}</span>
+                </div>
               </div>
-              <div>
-                <dt>Function</dt>
-                <dd>{activeSpec.detail}</dd>
+
+              <div className="arch-popover-section">
+                <span className="arch-tag-lbl">Functionality</span>
+                <p className="arch-popover-text">{node.detail}</p>
               </div>
-            </dl>
-            <p className="topo-drawer-doc">{activeSpec.documentation}</p>
-          </>
+
+              <div className="arch-popover-section">
+                <span className="arch-tag-lbl">Architecture Details</span>
+                <p className="arch-popover-doc">{node.doc}</p>
+              </div>
+            </div>
+          </div>
         )}
       </div>
-      {activeSpec && (
-        <button
-          className="topo-drawer-backdrop"
-          type="button"
-          aria-label="Close details"
-          onClick={() => setActiveNode(null)}
-        />
-      )}
+    )
+  }
+
+  return (
+    <div className="arch-diagram-shell" onClick={() => setActiveNode(null)}>
+      {/* ===== ZONE 1: INTERNET (WAN) ===== */}
+      <div className="arch-zone-card arch-wan-zone">
+        <div className="arch-zone-header">
+          <div className="arch-zone-title">
+            <span className="arch-zone-indicator" />
+            <span>INTERNET (WAN)</span>
+          </div>
+          <div className="arch-dns-pill">
+            <span>DNS:</span> <strong>maldet-fyp.my</strong> → <code>A 103.233.1.97</code>
+          </div>
+        </div>
+
+        <div className="arch-wan-grid">
+          {renderNodeButton("client_device")}
+          {renderNodeButton("dev_laptop")}
+          {renderNodeButton("external_services")}
+        </div>
+
+        <div className="arch-wan-flows">
+          <div className="arch-flow-col">
+            <span className="arch-flow-line" />
+            <span className="arch-flow-label">HTTPS / TCP 443 (HTTP 80 → 301)</span>
+            <span className="arch-flow-arrow">↓</span>
+          </div>
+          <div className="arch-flow-col">
+            <span className="arch-flow-line" />
+            <span className="arch-flow-label">SSH / TCP 8288</span>
+            <span className="arch-flow-arrow">↓</span>
+          </div>
+          <div className="arch-flow-col">
+            <span className="arch-flow-line arch-flow-dashed" />
+            <span className="arch-flow-label">Outbound HTTPS / TCP 443 (clone repo, API, signatures)</span>
+            <span className="arch-flow-arrow">↑</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ===== ZONE 2: VPS — Ubuntu 24.04 LTS ===== */}
+      <div className="arch-zone-card arch-vps-zone">
+        <div className="arch-zone-header">
+          <div className="arch-zone-title">
+            <span className="arch-zone-indicator indicator-vps" />
+            <span>VPS — Ubuntu 24.04 LTS (4 GB RAM / 100 GB disk)</span>
+          </div>
+          <div className="arch-vps-meta">
+            <span>Public IP: <strong>103.233.1.97</strong></span>
+            <span>·</span>
+            <span>Domain: <strong>maldet-fyp.my</strong></span>
+          </div>
+        </div>
+
+        {/* VPS Host Ingress Layer */}
+        <div className="arch-vps-host-grid">
+          {renderNodeButton("firewall")}
+          {renderNodeButton("apache")}
+          {renderNodeButton("openssh")}
+        </div>
+
+        {/* VPS Host to Docker Bridge Interconnects */}
+        <div className="arch-bridge-flows">
+          <div className="arch-flow-col">
+            <span className="arch-flow-label">HTTP (loopback) 127.0.0.1:5000</span>
+            <span className="arch-flow-arrow">↓</span>
+          </div>
+          <div className="arch-flow-col">
+            <span className="arch-flow-label arch-dashed-lbl">SSH tunnel laptop:3307 → db:3306 (AI summaries)</span>
+            <span className="arch-flow-arrow">↓</span>
+          </div>
+        </div>
+
+        {/* Docker Bridge Network Boundary */}
+        <div className="arch-docker-boundary">
+          <div className="arch-docker-header">
+            <span className="arch-docker-badge">
+              <span className="arch-docker-dot" />
+              Docker bridge network <code>maldet_default</code> (172.18.0.0/16)
+            </span>
+          </div>
+
+          <div className="arch-docker-grid">
+            {renderNodeButton("app_container")}
+            {renderNodeButton("worker_container")}
+            {renderNodeButton("db_container")}
+          </div>
+
+          <div className="arch-docker-connections">
+            <div className="arch-internal-flow">
+              <span>app container → TCP 3306 → db container</span>
+              <span>·</span>
+              <span>worker container → TCP 3306 → db container</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Legend & Network Rules */}
+      <div className="arch-legend-bar">
+        <div className="arch-legend-items">
+          <span className="arch-legend-item">
+            <span className="legend-line legend-solid" /> Solid line = inbound request
+          </span>
+          <span className="arch-legend-item">
+            <span className="legend-line legend-dashed" /> Dashed line = outbound connection or SSH tunnel
+          </span>
+        </div>
+        <p className="arch-legend-note">
+          App and worker reach MySQL by the service name <code>db</code> on the internal network. Only Apache (80/443) and SSH (8288) face the internet.
+        </p>
+      </div>
     </div>
   )
 }
