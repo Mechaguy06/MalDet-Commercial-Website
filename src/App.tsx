@@ -1,5 +1,7 @@
 import { type FormEvent, useEffect, useRef, useState } from "react"
 import Lenis from "lenis"
+import ParticleField, { type Shape } from "@/components/ParticleField"
+import Preloader from "@/components/Preloader"
 
 const MALDET_URL = "https://maldet-fyp.my/"
 
@@ -740,6 +742,14 @@ function Header({
   onToggleTheme: (event: React.MouseEvent) => void
 }) {
   const [open, setOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24)
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
 
   useEffect(() => {
     setOpen(false)
@@ -758,7 +768,7 @@ function Header({
   }, [open])
 
   return (
-    <header className="site-header">
+    <header className={`site-header ${scrolled || open ? "site-header-scrolled" : ""}`}>
       <nav className="nav-shell" aria-label="Primary navigation">
         <button
           className="brand-button"
@@ -1008,7 +1018,10 @@ function AboutPage({ onNavigate }: { onNavigate: (page: Page) => void }) {
 
   return (
     <main className="page page-about">
-      <section className="hero-section" ref={heroRef}>
+      <section className="hero-section stage" ref={heroRef}>
+        <div className="hero-canvas" aria-hidden="true">
+          <ParticleField shape="sphere" interactive center={[0.74, 0.42]} centerMobile={[0.62, 0.24]} scale={0.34} />
+        </div>
         <div className="hero-grid-pattern" aria-hidden="true" />
         <div className="hero-glow" aria-hidden="true" />
         <div className="hero-particles" aria-hidden="true">
@@ -1026,19 +1039,26 @@ function AboutPage({ onNavigate }: { onNavigate: (page: Page) => void }) {
               AI-Driven Malware Detection & Trust Scoring System
             </p>
             <h1>
-              Know what a repository hides <em>before you run it.</em>
+              <span className="line-mask">
+                <span style={{ "--d": "100ms" } as React.CSSProperties}>Know what a repository hides</span>
+              </span>
+              <span className="line-mask">
+                <span style={{ "--d": "230ms" } as React.CSSProperties}>
+                  <em>before you run it.</em>
+                </span>
+              </span>
             </h1>
-            <p className="hero-tagline">
+            <p className="hero-tagline fade-in" style={{ "--d": "420ms" } as React.CSSProperties}>
               One Scan · Six Detection Engines · Two Clear Verdicts
             </p>
-            <p className="hero-description">
+            <p className="hero-description fade-in" style={{ "--d": "520ms" } as React.CSSProperties}>
               MalDet scans public GitHub repositories with six specialized
               detection engines, filters real issues from scanner noise using a
               Random Forest machine-learning classifier, and gives you two
               actionable verdicts: is the code <strong>vulnerable</strong>, and
               does it look <strong>malicious</strong>?
             </p>
-            <div className="hero-actions">
+            <div className="hero-actions fade-in" style={{ "--d": "640ms" } as React.CSSProperties}>
               <MagneticButton href={MALDET_URL}>
                 Launch MalDet Scanner
               </MagneticButton>
@@ -1050,7 +1070,7 @@ function AboutPage({ onNavigate }: { onNavigate: (page: Page) => void }) {
               </MagneticButton>
             </div>
           </div>
-          <div className="hero-visual">
+          <div className="hero-visual fade-in" style={{ "--d": "760ms" } as React.CSSProperties}>
             <div className="visual-caption">
               <span className="status-dot" />
               Live Scanner Telemetry · {MALDET_URL}
@@ -1091,14 +1111,10 @@ function AboutPage({ onNavigate }: { onNavigate: (page: Page) => void }) {
               }
               align="left"
             />
-            <p className="body-copy">
-              Open-source software powers modern development, but pulling an
-              unverified GitHub repository into your environment introduces
-              both accidental security vulnerabilities and intentional
-              supply-chain malware. MalDet automates multi-engine static
-              inspection and machine-learning triage so developers can verify
-              repository trustworthiness before cloning or installing.
-            </p>
+            <WordReveal
+              className="body-copy"
+              text="Open-source software powers modern development, but pulling an unverified GitHub repository into your environment introduces both accidental security vulnerabilities and intentional supply-chain malware. MalDet automates multi-engine static inspection and machine-learning triage so developers can verify repository trustworthiness before cloning or installing."
+            />
             <div className="trust-note">
               <span className="trust-icon" aria-hidden="true">
                 ✓
@@ -1215,26 +1231,107 @@ function AboutPage({ onNavigate }: { onNavigate: (page: Page) => void }) {
   )
 }
 
+const workflowStages: { shape: Shape; caption: string }[] = [
+  { shape: "files", caption: "Clone & unpack" },
+  { shape: "scan", caption: "Multi-engine scan" },
+  { shape: "split", caption: "Real vs noise" },
+  { shape: "shield", caption: "Verdict" },
+]
+
+/** Scroll-linked pipeline: the copy scrolls while a sticky particle form morphs per step. */
 function Workflow() {
+  const [active, setActive] = useState(0)
+  const stepRefs = useRef<(HTMLLIElement | null)[]>([])
+
+  useEffect(() => {
+    if (typeof window.IntersectionObserver !== "function") return
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) setActive(Number((entry.target as HTMLElement).dataset.index))
+        }
+      },
+      { rootMargin: "-45% 0px -45% 0px" },
+    )
+    stepRefs.current.forEach((el) => el && observer.observe(el))
+    return () => observer.disconnect()
+  }, [])
+
   return (
-    <div className="workflow-grid">
-      {workflow.map((step, index) => (
-        <Reveal className="workflow-step" delay={index * 70} key={step.title}>
-          <div className="workflow-number">{step.number}</div>
-          <div className="workflow-icon" aria-hidden="true">
-            <span />
-            <span />
+    <div className="workflow-scroll">
+      <ol className="workflow-steps">
+        {workflow.map((step, index) => (
+          <li
+            key={step.title}
+            ref={(el) => {
+              stepRefs.current[index] = el
+            }}
+            data-index={index}
+            className={`workflow-scroll-step ${active === index ? "is-active" : ""}`}
+            aria-current={active === index ? "step" : undefined}
+          >
+            <span className="workflow-scroll-marker" aria-hidden="true">
+              <span className="workflow-scroll-dot" />
+              {step.number} / 0{workflow.length}
+            </span>
+            <h3>{step.title}</h3>
+            <p>{step.description}</p>
+          </li>
+        ))}
+      </ol>
+      <div className="workflow-stage" aria-hidden="true">
+        <div className="workflow-stage-sticky">
+          <div className="workflow-stage-canvas">
+            <ParticleField shape={workflowStages[active].shape} center={[0.5, 0.5]} scale={0.38} />
           </div>
-          <h3>{step.title}</h3>
-          <p>{step.description}</p>
-          {index < workflow.length - 1 && (
-            <div className="workflow-connector" aria-hidden="true">
-              <i />
-            </div>
-          )}
-        </Reveal>
-      ))}
+          <p className="eyebrow workflow-stage-caption">
+            {workflow[active].number} · {workflowStages[active].caption}
+          </p>
+        </div>
+      </div>
     </div>
+  )
+}
+
+/** Lights a paragraph up word by word as it scrolls through the viewport. */
+function WordReveal({ text, className = "" }: { text: string; className?: string }) {
+  const ref = useRef<HTMLParagraphElement>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el || useReducedMotion()) return
+    const words = Array.from(el.querySelectorAll<HTMLElement>(".word"))
+    let frame = 0
+    const update = () => {
+      frame = 0
+      const rect = el.getBoundingClientRect()
+      const vh = window.innerHeight
+      const progress = Math.min(1, Math.max(0, (vh * 0.85 - rect.top) / (rect.height + vh * 0.35)))
+      const lit = Math.round(progress * words.length)
+      words.forEach((w, i) => w.classList.toggle("on", i < lit))
+    }
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update)
+    }
+    update()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    window.addEventListener("resize", onScroll)
+    return () => {
+      cancelAnimationFrame(frame)
+      window.removeEventListener("scroll", onScroll)
+      window.removeEventListener("resize", onScroll)
+    }
+  }, [])
+
+  return (
+    <p ref={ref} className={className}>
+      <span className="sr-only">{text}</span>
+      {text.split(" ").map((word, i) => (
+        <span key={i} aria-hidden="true" className="word">
+          {word}{" "}
+        </span>
+      ))}
+    </p>
   )
 }
 
@@ -1834,7 +1931,7 @@ function DocumentationPage({
 }) {
   return (
     <main className="page page-documentation">
-      <section className="documentation-hero section-pad">
+      <section className="documentation-hero stage section-pad">
         <div className="documentation-pattern" aria-hidden="true" />
         <div className="hero-particles" aria-hidden="true">
           <i />
@@ -2343,8 +2440,12 @@ export default function App() {
     if (
       typeof window.IntersectionObserver !== "function" ||
       window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    )
+    ) {
+      document
+        .querySelectorAll(".reveal")
+        .forEach((element) => element.classList.add("is-visible"))
       return
+    }
 
     let observer: IntersectionObserver | undefined
     try {
@@ -2378,6 +2479,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      <Preloader />
       <div className="aurora" aria-hidden="true">
         <i className="aurora-blob aurora-blob-one" />
         <i className="aurora-blob aurora-blob-two" />

@@ -51,7 +51,8 @@ A standalone React 19 + Vite 8 + TypeScript + Tailwind CSS v4 commercial showcas
  Shared design tokens and responsive styles live in `styles/global.css` and `src/index.css`, matching the exact aesthetic of the MalDet scanner:
 - **Forest & Paper Palette**: Deep bottle-green forest surfaces (`#05110c`, `#0a1d15`, `#10291f`, `#193a2c`), warm ivory paper (`#f4f2eb`, `#fdfcf9`), emerald action buttons (`#1f5f43`), and glowing jade accents (`#a3d9b8`).
 - **5-Tier Risk Colors**: `Safe` (`#6cc28a`), `Low` (`#8bb8d6`), `Medium` (`#e8b84a`), `High` (`#ee9055`), and `Critical` (`#e86a5a`).
-- **Typography**: `IBM Plex Serif` for display headings, `IBM Plex Sans` for body/UI copy, and `IBM Plex Mono` for scan telemetry.
+- **Typography**: `IBM Plex Sans` (light 300 display headings with an upright jade accent phrase, matching the [maldet-website](https://github.com/Skidotus/maldet-website) theme), `IBM Plex Mono` for bracketed eyebrows and scan telemetry.
+- **Motion**: Session preloader with falling streaks, interactive canvas particle sphere in the hero, masked line-rise headline, blur-rise scroll reveals, cursor spotlight on cards, scroll-linked word reveal, and a sticky scroll-driven pipeline whose particle form morphs (files → scan → split → shield).
 - **Light & Dark Mode**: Supports smooth circular view-transition theme switching.
 
 ---
