@@ -13,7 +13,7 @@ import InterfaceShowcase from "@/components/docs/InterfaceShowcase"
 export default function DocumentationPage() {
   return (
     <main className="page page-documentation">
-      <section className="documentation-hero stage section-pad">
+      <section className="documentation-hero section-pad">
         <div className="documentation-pattern" aria-hidden="true" />
         <div className="hero-particles" aria-hidden="true">
           <i />
