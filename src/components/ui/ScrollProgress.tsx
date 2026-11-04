@@ -1,22 +1,41 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef } from "react"
 
 export default function ScrollProgress() {
-  const [progress, setProgress] = useState(0)
+  const barRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const onScroll = () => {
+    let ticking = false
+
+    const update = () => {
+      ticking = false
+      if (!barRef.current) return
       const max = document.documentElement.scrollHeight - window.innerHeight
-      setProgress(max > 0 ? window.scrollY / max : 0)
+      const progress = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0
+      barRef.current.style.transform = `scaleX(${progress})`
     }
-    onScroll()
+
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true
+        requestAnimationFrame(update)
+      }
+    }
+
+    update()
     window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
+    window.addEventListener("resize", onScroll)
+
+    return () => {
+      window.removeEventListener("scroll", onScroll)
+      window.removeEventListener("resize", onScroll)
+    }
   }, [])
 
   return (
     <div
+      ref={barRef}
       className="scroll-progress"
-      style={{ transform: `scaleX(${progress})` }}
+      style={{ transform: "scaleX(0)" }}
       aria-hidden="true"
     />
   )

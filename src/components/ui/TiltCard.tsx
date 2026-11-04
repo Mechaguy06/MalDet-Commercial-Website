@@ -15,6 +15,14 @@ export default function TiltCard({
   const ref = useRef<HTMLDivElement>(null)
 
   const handleMove = (event: React.MouseEvent) => {
+    // Disable 3D tilt calculations on mobile / touchscreens for maximum scroll smoothness
+    if (
+      typeof window !== "undefined" &&
+      (window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 768)
+    ) {
+      return
+    }
+
     const el = ref.current
     if (!el || prefersReducedMotion()) return
     const rect = el.getBoundingClientRect()

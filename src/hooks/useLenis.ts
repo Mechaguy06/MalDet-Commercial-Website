@@ -5,12 +5,23 @@ import { prefersReducedMotion } from "@/lib/motion"
 export function useLenis() {
   useEffect(() => {
     if (prefersReducedMotion()) return
+
+    // On touch devices / mobile phones (Android / iOS), native momentum scrolling
+    // is GPU-accelerated. Intercepting touch events with JavaScript causes
+    // noticeable latency and stutter on phones.
+    const isTouch =
+      typeof window !== "undefined" &&
+      (window.matchMedia("(pointer: coarse)").matches ||
+        "ontouchstart" in window ||
+        window.innerWidth < 768)
+
+    if (isTouch) return
+
     const lenis = new Lenis({
-      duration: 1.4,
+      duration: 1.2,
       easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
-      wheelMultiplier: 0.85,
-      touchMultiplier: 1.4,
+      syncTouch: false,
     })
     ;(window as any).__lenis = lenis
     let frame: number

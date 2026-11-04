@@ -4,9 +4,6 @@ import { prefersReducedMotion } from "@/lib/motion"
 const GLYPHS =
   "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789ABCDEF<>/{}[]$#".split("")
 
-const FRAME_MS = 1000 / 30
-const FADE = 0.045 // how quickly old glyphs fade: lower = longer trails
-
 type Props = {
   /** Glyph colour. */
   color?: string
@@ -17,12 +14,6 @@ type Props = {
   className?: string
 }
 
-/**
- * "Matrix digital rain" background. The canvas stays transparent (old glyphs are
- * faded out with destination-out) so it blends with whatever sits behind it.
- * Pauses off-screen and in hidden tabs; draws a single still frame for
- * visitors who prefer reduced motion.
- */
 export default function MatrixRain({
   color = "#00ff66",
   spark = "#d1fae5",
@@ -46,19 +37,23 @@ export default function MatrixRain({
     let last = 0
     let onScreen = true
 
+    const isMobile = window.innerWidth < 768 || window.matchMedia("(pointer: coarse)").matches
+    const FRAME_MS = isMobile ? 1000 / 24 : 1000 / 30
+    const FADE = isMobile ? 0.06 : 0.045
+
     const resize = () => {
       const rect = canvas.getBoundingClientRect()
       width = rect.width
       height = rect.height
-      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      // Keep DPR at 1 on mobile to prevent GPU fill-rate throttling on high-res phone screens
+      const dpr = isMobile ? 1 : Math.min(window.devicePixelRatio || 1, 1.5)
       canvas.width = Math.round(width * dpr)
       canvas.height = Math.round(height * dpr)
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
 
-      fontSize = width < 640 ? 14 : 16
+      fontSize = isMobile ? 18 : 16
       rows = Math.ceil(height / fontSize)
       const columns = Math.ceil(width / fontSize)
-      // Spread the heads over the viewport so the first frame is already populated.
       heads = Array.from({ length: columns }, () => Math.random() * rows)
       speeds = Array.from({ length: columns }, () => 0.3 + Math.random() * 0.55)
       ctx.clearRect(0, 0, width, height)
@@ -80,7 +75,6 @@ export default function MatrixRain({
           ctx.fillStyle = Math.random() < 0.1 ? spark : color
           ctx.fillText(GLYPHS[Math.floor(Math.random() * GLYPHS.length)], i * fontSize, row * fontSize)
         }
-        // Restart a column at the top, at random, once it has left the screen.
         if (row > rows && Math.random() > 0.975) heads[i] = 0
       }
     }
@@ -103,7 +97,6 @@ export default function MatrixRain({
     resize()
 
     if (prefersReducedMotion()) {
-      // One still frame: run the simulation forward a little, never animate.
       for (let i = 0; i < 70; i++) step()
       const observer = new ResizeObserver(() => {
         resize()
@@ -143,7 +136,6 @@ export default function MatrixRain({
         width: "100%",
         height: "100%",
         opacity,
-        // Fade the rain out into the solid section background.
         WebkitMaskImage: "linear-gradient(to bottom, black 60%, transparent 100%)",
         maskImage: "linear-gradient(to bottom, black 60%, transparent 100%)",
       }}

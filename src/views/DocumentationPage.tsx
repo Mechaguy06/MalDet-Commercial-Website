@@ -7,7 +7,6 @@ import Reveal from "@/components/ui/Reveal"
 import ActionButton from "@/components/ui/ActionButton"
 import SectionHeading from "@/components/ui/SectionHeading"
 import Workflow from "@/components/home/Workflow"
-import Topology from "@/components/docs/Topology"
 import InterfaceShowcase from "@/components/docs/InterfaceShowcase"
 
 export default function DocumentationPage() {
@@ -90,32 +89,6 @@ export default function DocumentationPage() {
               </TiltCard>
             ))}
           </div>
-        </div>
-      </section>
-
-      <section className="topology-section section-pad">
-        <div className="content-shell">
-          <Reveal>
-            <SectionHeading
-              eyebrow="Interactive system architecture"
-              title={
-                <>
-                  Production VPS & Multi-Container <em>Architecture</em>
-                </>
-              }
-              description="Click any component below to view its live endpoint, port security rules, and container isolation boundaries across WAN, Apache reverse proxy, and the Docker bridge network."
-            />
-          </Reveal>
-          <Reveal delay={100}>
-            <Topology />
-          </Reveal>
-          <p className="topology-caption">
-            All repository scanning takes place statically on the MalDet server (
-            <a href={MALDET_URL} target="_blank" rel="noopener noreferrer" className="inline-link">
-              {MALDET_URL}
-            </a>
-            ) without executing untrusted repository code.
-          </p>
         </div>
       </section>
 
